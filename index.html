@@ -53,11 +53,10 @@
 		// =============== general settings =========================
 		var document_title = "Petal Browser";
 		
-		//some dirs to load images from, make this csv later
-		
+		var LOG_LVLS = {"debug":0,"info":1,"warning":2,"error":3};
+		var LOG_LVL = "debug";
 		
 
-		
 		var svg = d3.select("body #viz")
 							.append("svg")
 				            .attr("width", 800)   
@@ -71,6 +70,7 @@
 		// animations because its really stupid and showy 
 		var ANIMATE = false; 
 		
+		
 		//================ jquery history ===========================
 		// Bind a handler for ALL hash/state changes
 		 $.History.bind(function(state){
@@ -78,8 +78,34 @@
 						// Update the page's title with our current state on the end
 						document.title = document_title + ' | ' + state;
 						
-						// match for url patterns. (Jquery is becoming really cool..)
-						if(state.match("^petal/") != null){
+						// try to match url to pattern like /petal/<petalname>/<filetoshow>
+						// If this matches, you need to show an image directly
+						urlm = state.match("petal/([a-zA-Z0-9_]*)/([a-zA-Z0-9_\.]*)");
+						log("matching  "+state+" for /petal/([a-zA-Z0-9_]*)/([a-zA-Z0-9_\.]*) was: '"+urlm+"'","debug");
+						if(urlm != null){
+							var petalname = urlm[1];
+							var imagename = urlm[2];
+							var petaldir = getpetaldir(petalname)
+									if(petaldir == ""){
+										var msg = "Could not find '"+petalname+"'. I don't know which images to load."; 
+										console.log(msg);
+										alert(msg);
+							}
+							
+							remove_images();
+							showimage(petaldir+"/"+imagename);
+									
+							//TODO remove ring?
+							contract_ring(svg,ANIMATE);
+														//when something has been loaded, animate everything from now on
+							ANIMATE = true;
+							 
+						}
+						
+						
+						
+						//If this matches you need to show a bunch of images
+						else if(state.match("^petal/") != null){
 							var petalname = state.substring(6);
 							var petaldir = getpetaldir(petalname)
 							if(petaldir == ""){
@@ -97,6 +123,8 @@
 							
 						}
 		});
+		
+		
 		
 		// Bind handlers for specific states
 		$.History.bind('home',function(state){			
@@ -126,6 +154,10 @@
 			// set to petal name explicitly
 			log("x for "+petalname+" was "+ d3.select("#"+petalname).attr("cx"));
 			return {x:d3.select("#"+petalname).attr("cx"),y:d3.select("#"+petalname).attr("cy")};
+		}
+		
+		function showimage(imagepath){
+			alert("showing image "+imagepath+" for real!");
 		}
 		
 		function showimages(dir,startpos,ANIMATE){
@@ -368,8 +400,11 @@
 			return rng;
 		}
 		
-		function log(msg){
-			console.log("* "+msg)
+		function log(msg,lvl){
+			if(lvl == null){lvl = "info";}
+			if(LOG_LVLS[lvl] >= LOG_LVLS[LOG_LVL]){			
+				console.log("* "+lvl+" - "+msg);
+			}
 		}
 		
 		
