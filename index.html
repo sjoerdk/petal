@@ -12,12 +12,15 @@
 	 * 03/02/2013 v9			Refactoring, added small preview images in expanded main menu
 	 * 06/02/2013 v10			Preview images now grow in place around petal, image collection
 	 							now explode from petal position.
+	 							
 							
 	 *  TODO: - supress mouseover and mouseout during animation
 	 		  - supress animation when going back to petal view. this is just annoying. but how? maybe set var
 	 		  	'animate' when any view inside is loaded, when coming from outside directly, animations will not show
 	 		  - make work on IE8. IE7 can go take a hike, maybe add warning for old browsers
 	 		  - patalnames should be unique, otherswise things go wrong with looking up values.
+	 		  - expand browser
+	 		  - encode urls to not include spaces, or fix url patterns to deal with spaces
 	 	 	  - Add content! This thing is also working great
 	 			
 	 
@@ -85,15 +88,10 @@
 						if(urlm != null){
 							var petalname = urlm[1];
 							var imagename = urlm[2];
-							var petaldir = getpetaldir(petalname)
-									if(petaldir == ""){
-										var msg = "Could not find '"+petalname+"'. I don't know which images to load."; 
-										console.log(msg);
-										alert(msg);
-							}
+							
 							
 							remove_images();
-							showimage(petaldir+"/"+imagename);
+							showimage(petalname,imagename);
 									
 							//TODO remove ring?
 							contract_ring(svg,ANIMATE);
@@ -156,9 +154,85 @@
 			return {x:d3.select("#"+petalname).attr("cx"),y:d3.select("#"+petalname).attr("cy")};
 		}
 		
-		function showimage(imagepath){
-			alert("showing image "+imagepath+" for real!");
+		function showimage(petalname,imagename){
+			//show a single image full screen. Intelligent error if not found, preloads next and prev
+			
+			
+			var dir = getpetaldir(petalname)
+				if(dir == ""){
+					var msg = "Could not find '"+petalname+"'. I don't know which images to load."; 
+					console.log(msg);
+					alert(msg);
+			}
+			
+			
+			d3.text(dir+"files.csv", function(datasetText) {
+				var dataset = d3.csv.parse(datasetText);
+				//some convenience functions
+				var x = function(d){return (parseInt(d.x)+image_offset.x)*image_rescale.x};
+				var y = function(d){return (parseInt(d.y)+image_offset.y)*image_rescale.y};
+				var image_path = dir+"/"+imagename
+				var image_url = function(d){return "url("+currentdir+d.filename+")"};
+				var image_thumb_path = function(d){return currentdir+d.thumb};
+				var image_thumb_url = function(d){return "url("+currentdir+d.thumb+")"};
+				var image_coords = function(d){return "("+x(d)+","+y(d)+")"};
+				
+				
+				//find out which image this is
+				var index = -1;
+				for(var i=0; i<dataset.length; i++){
+					var imageinfo = dataset[i];
+					if(imageinfo.filename == imagename){
+						var index = i;
+						//return; //break loop //this kills all execution?
+					}
+				}
+				if(index == -1){
+					alert("could not find "+imagename+"");
+				}else{
+					
+					log("showing "+imagename+"");
+					//show image full screen
+					var browser = d3.select("body #divs")
+						.append("div")
+						.attr("id","imagecontainer")
+						//.style("height","200px")
+						//.style("width","200px")
+						.style("background-color","red");
+						
+					browser.append("div")
+						.style("height","40px")
+						.style("width","100px")
+						.text("next")
+						.style("background-color","white")
+						.style("border","solid black thin")
+						.on("click",function(){
+								var nextimageurl = "petal/"+petalname+"/"+dataset[index+1].filename;
+								$.History.go(nextimageurl);
+							})
+							
+						
+						
+					browser.append("img")
+							//.style("display","none")
+							.attr("src", image_path)
+							.attr("id","imagecontained")
+							.attr("width","70%")
+							.transition()
+								.duration(200)
+								.ease("easeOutExpo")
+								.attr("width","80%");
+
+				};
+				
+			});
+
+		
+		
+			
 		}
+		
+		
 		
 		function showimages(dir,startpos,ANIMATE){
 			// Show scattered images based on csv file containing, x,y,filname,thumb
