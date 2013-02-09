@@ -1,0 +1,447 @@
+
+<html lang="en">
+
+	<!--/*
+	 * A website for showing nice drawings. And a test in using d3 an jquery
+	 * 
+	 * Author - Sjoerd Kerkstra
+	 *
+	 * Version History
+	 * 15/01/2013 V0.1 - 0.9 	Startup, got some nice radial elastic animations going
+	 * 20/01/2013 v8			Refactoring, added url based states using jquery history
+	 * 03/02/2013 v9			Refactoring, added small preview images in expanded main menu
+	 * 06/02/2013 v10			Preview images now grow in place around petal, image collection
+	 							now explode from petal position.
+							
+	 *  TODO: - supress mouseover and mouseout during animation
+	 		  - supress animation when going back to petal view. this is just annoying. but how? maybe set var
+	 		  	'animate' when any view inside is loaded, when coming from outside directly, animations will not show
+	 		  - make work on IE8. IE7 can go take a hike, maybe add warning for old browsers
+	 		  - patalnames should be unique, otherswise things go wrong with looking up values.
+	 	 	  - Add content! This thing is also working great
+	 			
+	 
+	 */-->
+	
+	
+	<head>
+		<meta charset="utf-8">
+		<title>Petals</title>
+		<script type="text/javascript" src="d3.v3/d3.v3.min.js"></script>
+		<script type="text/javascript" src="jquery-history/scripts/jquery-1.4.2.min.js"></script>
+		<script type="text/javascript" src="jquery-history/scripts/jquery.history.min.js"></script>
+		<style type="text/css">
+			body 						{background-color: #252525;}
+			.bar 						{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
+			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
+			#viz						{height: 800px; margin-left: auto; margin-right: auto; width: 800px; position: relative;}
+			#divs						{position:relative}
+			#divs .bar 					{position:absolute}
+			.fullscreenimagecontainer	{background-color:red; position:absolute; z-index:2;}
+			
+		</style>
+	</head>
+	<body>
+		
+		<div id="divs"></div>
+		<div id="viz"></div>
+		
+		<script type="text/javascript" src="menu.js"></script>
+		
+		<script type="text/javascript">
+		
+		// =============== general settings =========================
+		var document_title = "Petal Browser";
+		
+		//some dirs to load images from, make this csv later
+		
+		
+
+		
+		var svg = d3.select("body #viz")
+							.append("svg")
+				            .attr("width", 800)   
+		            		.attr("height", 800); 
+		            		
+		var image_offset = {x:0,y:0}; //translate all images
+		var image_rescale = {x:1,y:1}; //for squashing or expanding the blob of images
+		
+		// Do not show animation when loading from outside directly.
+		// Especially when viewing images directly, going back should not re-show
+		// animations because its really stupid and showy 
+		var ANIMATE = false; 
+		
+		//================ jquery history ===========================
+		// Bind a handler for ALL hash/state changes
+		 $.History.bind(function(state){
+						
+						// Update the page's title with our current state on the end
+						document.title = document_title + ' | ' + state;
+						
+						// match for url patterns. (Jquery is becoming really cool..)
+						if(state.match("^petal/") != null){
+							var petalname = state.substring(6);
+							var petaldir = getpetaldir(petalname)
+							if(petaldir == ""){
+								var msg = "Could not find '"+state.substring(6)+"'. I don't know which images to load."; 
+								console.log(msg);
+								alert(msg);
+							}
+							startposition = getpetalposition(petalname);
+							remove_images();
+							
+							showimages(petaldir,startposition,ANIMATE);
+							contract_ring(svg,ANIMATE);
+							//when something has been loaded, animate everything from now on
+							ANIMATE = true;
+							
+						}
+		});
+		
+		// Bind handlers for specific states
+		$.History.bind('home',function(state){			
+			remove_images();
+			expand_ring(svg);
+			ANIMATE = true;
+		});
+		
+		
+				
+		//=============== end jquery history ==========================================
+		
+		function getpetaldir(petalname){
+			// look op directory corresponding to petalname. return empty string if not found
+			var petaldir = "";
+			dirs.forEach(function(item){
+				if(item.name == petalname){
+					petaldir = item.dir;
+					return false; // jquery for break loop
+				}
+			})
+			return petaldir;
+		}
+		
+		function getpetalposition(petalname){
+			// get position of circle corresponding to name. this only works because id of each circle is
+			// set to petal name explicitly
+			log("x for "+petalname+" was "+ d3.select("#"+petalname).attr("cx"));
+			return {x:d3.select("#"+petalname).attr("cx"),y:d3.select("#"+petalname).attr("cy")};
+		}
+		
+		function showimages(dir,startpos,ANIMATE){
+			// Show scattered images based on csv file containing, x,y,filname,thumb
+			// Explode images from {x,y} startpos
+			if(ANIMATE == null){ANIMATE == true}
+			
+			log("showing images in dir '"+dir+"' exploding from position ("+startpos.x+","+startpos.y+")")
+			var currentdir = dir
+			d3.text(dir+"files.csv", function(datasetText) {
+				var dataset = d3.csv.parse(datasetText);
+				//some convenience functions
+				var x = function(d){return (parseInt(d.x)+image_offset.x)*image_rescale.x};
+				var y = function(d){return (parseInt(d.y)+image_offset.y)*image_rescale.y};
+				var image_path = function(d){return currentdir+d.filename};
+				var image_url = function(d){return "url("+currentdir+d.filename+")"};
+				var image_thumb_path = function(d){return currentdir+d.thumb};
+				var image_thumb_url = function(d){return "url("+currentdir+d.thumb+")"};
+				var image_coords = function(d){return "("+x(d)+","+y(d)+")"};
+				
+				var startposx = function(d){if(ANIMATE){return startpos.x;}else{return x(d);}}
+				var startposy = function(d){if(ANIMATE){return startpos.y;}else{return y(d);}}
+				
+					var divs = d3.select("body #viz");
+				var images = divs.selectAll("div")
+							.data(dataset)
+							.enter()
+							.append("div")							
+							.attr("class", "bar")						
+							.style("left",startposx)
+							.style("top",startposy)
+							// add hover over with coords 
+							.attr('title', function(d,i){return d.filename})
+							// when obstructed you can lift an images out of the pile with mouseover
+							.on("mouseover",function(d,i){
+									d3.select(this)
+										.style("z-index","1");
+								})
+							.on("mouseout",function(d,i){
+									d3.select(this)
+										.style("z-index","0");
+								})
+							// on click show image directly, as file
+							.on("click",function(d,i){
+								var msg = "I am " + image_path(d);
+								console.log(msg);
+								window.location = image_path(d);
+								})
+				//show thumbnail for each image in list
+				images
+					.append("img")
+					.attr("src", image_thumb_path)
+				
+				if(ANIMATE){
+				images.
+					transition()
+					.style("left",x)
+					.style("top",y)
+				}
+				
+				});//end d3.text
+			};//end showimages
+			
+			function showimagefullscreen(image_path){
+				// very simple image brower. All these only things are way to fancy
+				
+				//find position of topleft of image to make it centered. I am quite amazed this works wrt loading
+				var centerleft = function(){return Math.max((($(window).width()-$("#fullscreenimage").width())/2),0)+"px";}
+				var centertop =  function(){return (($(window).height()-$("#fullscreenimage").height())/2)+"px";}
+				
+				var viewer = d3.select("body #divs")
+								.append("div")
+								.attr("class","fullscreenimagecontainer")
+								.style("width",$(window).width()-15+"px")
+								.style("height",$(window).height()+"px")
+								.append("img")
+									.attr("id","fullscreenimage")
+									.attr("src",image_path)
+									.style("position","relative")
+									.style("left",centerleft)
+									.style("top",centertop)
+								
+			}
+			
+			function showpreview(dir,location,element){
+				// Show a few thumbs as preview, as ring aroung location, attach to element
+				if(location == null){location = {x:300,y:300};}
+				if(element == null){element = d3.select("body #viz")}
+				
+				//needed line up the preview with the svgs because origin of each point left upper corner
+				//location = {x:location.x-20,y:location.y-20};
+				
+				log("showing preview images from dir '"+dir+"' at ("+location.x+","+location.y+")");
+				var currentdir = dir
+				d3.text(dir+"files.csv", function(datasetText) {
+					var dataset = d3.csv.parse(datasetText).slice(0,5);
+					var locations = ringlocations(dataset.length,location,80);
+					//log(JSON.stringify(locations));
+					log(locations.length);
+					//some convenience functions
+					var x = function(d,i){return (locations[i].x+image_offset.x)};
+					var y = function(d,i){return (locations[i].y+image_offset.y)};
+					//var x = function(d,i){log(dataset.length+"*"+locations[i]+" - "+i); return locations[i-1]};
+					//var y = function(d,i){return i*50};
+					var image_path = function(d){return currentdir+d.filename};
+					var image_url = function(d){return "url("+currentdir+d.filename+")"};
+					var image_thumb_path = function(d){return currentdir+d.thumb};
+					var image_thumb_url = function(d){return "url("+currentdir+d.thumb+")"};
+					var image_coords = function(d){return "("+x(d)+","+y(d)+")"};
+
+					
+					var images = element.selectAll("div").append("div")
+								.data(dataset)
+								.enter()
+								.append("div")
+								.attr("class", "bar preview")						
+								.style("left",x)
+								.style("top",y)
+								// when obstructed you can lift an images out of the pile with mouseover
+								.on("mouseover",function(d,i){
+										d3.select(this)
+											.style("z-index","1");
+											
+										
+									})
+								.on("mouseout",function(d,i){
+										d3.select(this)
+											.style("z-index","0");
+									})
+								// on click show image directly, as file
+								.on("click",function(d,i){
+									var msg = "I am " + image_path(d);
+									console.log(msg);
+									window.location = image_path(d);
+									})
+					images
+						.transition()
+						.duration(200)
+						.ease("easeOutExpo")
+							.style("margin-top","-30px")
+							.style("margin-left","-30px")
+
+					images.
+						//show thumbnail for each image in list								
+						append("img")
+							//.style("display","none")
+							.attr("src", image_thumb_path)
+							.attr("width","1px")
+							.transition()
+								.duration(200)
+								.ease("easeOutExpo")
+								.attr("width","60px")
+							
+			});//end d3.text
+		};//end showimages
+		
+		
+		function remove_preview(){
+					log("removing preview images")
+					
+					var divs = d3.selectAll("#viz .preview").data([]).exit().remove();
+					
+		}
+		function remove_images(){
+			log("removing all images")
+			var divs = d3.selectAll("#divs div").data([]).exit().remove();
+			var divs = d3.selectAll("#viz div").data([]).exit().remove();
+			
+		}
+		
+		function contract_ring(svg,ANIMATE){
+			
+			log("contracting ring")
+			//contract ring
+			ring_r = ring_inner;
+				
+			if(ANIMATE){
+				ring_center = {x:30,y:30};
+				svg.selectAll("circle")					
+								.transition()				
+									.duration(1000)
+									.ease("elastic")
+									.attr("r",5)
+									.attr("cy",ring_y)
+									.attr("cx",ring_x);
+			}else{
+				ring_center = {x:30,y:30};
+				svg.selectAll("circle")
+					.transition().duration(1) //without transition getpetallocation does not work. Why???
+							.attr("r",5)
+							.attr("cy",ring_y)
+							.attr("cx",ring_x);
+				
+			}
+			menuexpanded = false;
+		}
+		
+		function expand_ring(svg){
+			log("expanding ring")
+			ring_r = ring_outer;
+			ring_center = {x:400,y:300};
+			svg.selectAll("circle")					
+				.transition()				
+					.duration(1000)
+					.ease("elastic")
+					.attr("r",30)
+					.attr("cy",ring_y)
+					.attr("cx",ring_x)
+			menuexpanded = true;
+		}
+		
+		function ringlocations(n,origin_,r){
+			//returns an array of n locations {x,y} equally spaced around origin in a ring shape of radius r
+			log("creating "+n+" positions around point ("+origin_.x+","+origin_.y+") at distance "+r)
+			var ring_r = r; // current circle radius in pixels
+
+			var ring_center = origin_;
+			var num_of_objects = n;
+			var rad_increment = (Math.PI * 2)/num_of_objects; //divide 2 PI radians over number of objects
+			var ringlocs = [];
+			var rng = range(n)
+			$.each(range(n),function(key,value){
+				var x_ = ring_center.x + Math.sin(rad_increment*value) * ring_r;
+				var y_ = ring_center.y + Math.cos(rad_increment*value) * ring_r;
+				ringlocs.push({x:x_,y:y_});
+				});
+
+			return ringlocs;
+		}
+		
+		function range(start_,stop_,step_){
+			//I like python range. This one can only handle incresing range now
+			if(stop_ ==undefined){stop_=start_;start_=0;}
+			if(step_ ==undefined){step_=1;}
+			rng = [];			
+			for(i=start_;i<stop_;i+=step_){
+				rng.push(i);
+				
+			}
+			return rng;
+		}
+		
+		function log(msg){
+			console.log("* "+msg)
+		}
+		
+		
+			
+		    
+		    // color scale for automatically shoosing nice colors
+		    var colors = d3.scale.category20b();
+		   
+		    var dataset = dirs;
+		    
+		    // ============== layout objects in ring shape		    
+		    var ring_inner = 10
+		    var ring_outer = 200
+		    var ring_r = ring_inner; // current circle radius in pixels
+		    var menuexpanded = false;		    
+		    var ring_center = {x:400,y:300};		    
+		    var num_of_objects = dataset.length;
+		    var rad_increment = (Math.PI * 2)/num_of_objects //divide 2 PI radians over number of objects
+		    
+		    var ring_y = function(d,i){
+		    		return ring_center.y + Math.sin(rad_increment*i) * ring_r};
+		    		
+		    var ring_x = function(d,i){
+		    		return ring_center.x + Math.cos(rad_increment*i) * ring_r};
+		    
+		    var circles = svg.selectAll("circle")
+				.data(dataset)
+			
+			circles
+				.enter()
+				.append("svg:circle")
+				.attr("cx",ring_x)
+				.attr("cy",ring_y)
+				.attr("r",5)
+				.attr("fill",function(d,i) {return colors(i);})
+				.attr("id",function(d,i){return d.name})
+				.attr("i",function(d,i){return i;})
+						
+				.on("mouseover", function(d,i){
+					if(menuexpanded == false){ //you can set custom attributes!
+						$.History.go('home');
+						}
+					else{
+						
+						remove_preview();
+						showpreview(d.dir,{x:ring_x(d,i),y:ring_y(d,i)});
+					}
+				 })
+				 .on("mouseout", function(){
+						remove_preview();					
+				 })
+
+
+				.on("click",function(d,i){
+					$.History.go('petal/'+d.name);
+					contract_ring(svg);
+				})
+				
+		        .append("svg:title")
+					.text(function(d, i) {						
+						return d.name;
+						})
+				
+			
+			
+			circles.append("div")
+				.attr("class", "preview")
+				.text
+				
+		    
+		    
+    </script>
+		
+	</body>
+</html>
