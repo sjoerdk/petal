@@ -42,7 +42,7 @@
 			body 						{background-color: #252525;}
 			.bar 						{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
 			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
-			#viz						{height: 800px; margin-left: auto; margin-right: auto; width: 800px; position: relative;}
+			#viz						{width:800px; margin-left: auto; margin-right: auto; position: relative;}
 			#divs						{position:relative}
 			#divs .bar 					{position:absolute}
 			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto; 
@@ -54,8 +54,9 @@
 	</head>
 	<body>
 		
-		<div id="divs"></div>
 		<div id="viz"></div>
+		<div id="divs"></div>
+		
 		
 		<!-- load file file info on each petal to show -->
 		<script type="text/javascript" src="menu.js"></script>
@@ -71,8 +72,10 @@
 
 		var svg = d3.select("body #viz")
 							.append("svg")
-				            .attr("width", 800)   
-		            		.attr("height", 800); 
+		
+		svg.attr("width", 800)   
+		       .attr("height",800); 
+		 
 		            		
 		var image_offset = {x:0,y:0}; //translate all images
 		var image_rescale = {x:1,y:1}; //for squashing or expanding the blob of images
@@ -107,6 +110,8 @@
 							//TODO remove ring?
 							contract_ring(svg,ANIMATE);
 							
+							setsvgsize(50);
+							
 							//when coming from a closeup image, don't animate
 							ANIMATE = false;
 							 
@@ -121,7 +126,7 @@
 							
 							startposition = getpetalposition(petalname);
 							remove_images();
-							
+							setsvgsize(800);
 							showimages(petalname,startposition,ANIMATE);
 							contract_ring(svg,ANIMATE);
 							//when something has been loaded, animate everything from now on
@@ -135,6 +140,7 @@
 		// Bind handlers for specific states
 		$.History.bind('home',function(state){			
 			remove_images();
+			setsvgsize(800);
 			expand_ring(svg);
 			ANIMATE = true;
 		});
@@ -142,6 +148,14 @@
 		
 				
 		//=============== end jquery history ==========================================
+		
+		function setsvgsize(size){
+			svg.attr("width", size)   
+		       .attr("height",size); 
+		    d3.select("body #viz")
+		    	
+		    	.style("height",size)
+		}
 		
 		function writetofile(filename,content){
 			// Make ajax POST to php script 'write_to_file.php' to write file
@@ -261,7 +275,7 @@
 								//.style("display","none")
 								.attr("src", image_path)
 								.attr("id","imagecontained")
-								.attr("height","100%")
+								.attr("height","85%")
 								.style("display","none");
 					image.on("click",function(){
 							image.attr("height","");
