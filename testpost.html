@@ -14,10 +14,14 @@
 			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
 			#button						{width:40px; height:20px; background-color:red;}
 			#message					{background-color:white;}
+			#currentcontent				{background-color:yellow;}
+			
 			#viz						{height: 800px; margin-left: auto; margin-right: auto; width: 800px; position: relative;}
 			#divs						{position:relative}
 			#divs .bar 					{position:absolute}
 			.fullscreenimagecontainer	{background-color:red; position:absolute; z-index:2;}
+			
+			
 			
 		</style>
 	</head>
@@ -26,17 +30,37 @@
 		<div id="divs">
 		<div id="button"></div>
 		<div id="message"></div>
+		<div id="currentcontent"></div>
+		<INPUT TYPE="text" NAME="contenttosend" id="contenttosend" SIZE="40">
 		</div>
 	<script>
+		
 		var filename = "kees.txt";
-		var content = "er was eens een keer";
-	    var dataString = 'file='+ filename + '&content=' + content;  
-	    //alert (dataString);return false;  
-	    
-	    var kees;
-	    d3.select("#button").
-	    	on("click",function(){
-	    	
+		var content = "er was eens een keer2";
+
+		d3.select("#button").
+			on("click",function(){
+			    writetofile(filename,$("#contenttosend").val());
+			});  
+			
+		//get current content of file
+		 d3.text(filename, function(unparsedData)
+		  {
+		   var data = d3.csv.parseRows(unparsedData);
+		   d3.select("#currentcontent").text("current content of '"+ filename +"': "+data);
+		   $("#contenttosend").val(data);
+		  });
+    
+		
+		
+			
+		
+		
+
+		
+		function writetofile(filename,content){
+			    var dataString = 'file='+ filename + '&content=' + content;  
+
 				$.ajax({  
 				  type: "POST",  
 				  url: "write_to_file.php",  
@@ -46,13 +70,14 @@
 					$('#message').html("response:"+data);
 				  },
 				  error: function(xhr,status,errorText) {
-				  	$('#message').html("Error: "+errorText +" "+ status+ " "+ xhr);
-				  	
-				  	
+					$('#message').html("Error: "+errorText +" "+ status+ " "+ xhr);
+
+
 				  }
-				});  
-			});  
-			
+				});	
+		
+		}
+		
 		
     
 	</script>
