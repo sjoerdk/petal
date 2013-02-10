@@ -1,0 +1,61 @@
+
+<html lang="en">
+
+	
+	<head>
+		<meta charset="utf-8">
+		<title>Petals</title>
+		<script type="text/javascript" src="d3.v3/d3.v3.min.js"></script>
+		<script type="text/javascript" src="jquery-history/scripts/jquery-1.4.2.min.js"></script>
+		<script type="text/javascript" src="jquery-history/scripts/jquery.history.min.js"></script>
+		<style type="text/css">
+			body 						{background-color: #252525;}
+			.bar 						{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
+			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
+			#button						{width:40px; height:20px; background-color:red;}
+			#message					{background-color:white;}
+			#viz						{height: 800px; margin-left: auto; margin-right: auto; width: 800px; position: relative;}
+			#divs						{position:relative}
+			#divs .bar 					{position:absolute}
+			.fullscreenimagecontainer	{background-color:red; position:absolute; z-index:2;}
+			
+		</style>
+	</head>
+	<body>
+		
+		<div id="divs">
+		<div id="button"></div>
+		<div id="message"></div>
+		</div>
+	<script>
+		var filename = "kees.txt";
+		var content = "er was eens een keer";
+	    var dataString = 'file='+ filename + '&content=' + content;  
+	    //alert (dataString);return false;  
+	    
+	    var kees;
+	    d3.select("#button").
+	    	on("click",function(){
+	    	
+				$.ajax({  
+				  type: "POST",  
+				  url: "write_to_file.php",  
+				  data: dataString,  
+				  success: function(data, status, xhr) {  
+					$('#contact_form').html("<div id='message'></div>");  
+					$('#message').html("response:"+data);
+				  },
+				  error: function(xhr,status,errorText) {
+				  	$('#message').html("Error: "+errorText +" "+ status+ " "+ xhr);
+				  	
+				  	
+				  }
+				});  
+			});  
+			
+		
+    
+	</script>
+		
+	</body>
+</html>

@@ -135,6 +135,33 @@
 				
 		//=============== end jquery history ==========================================
 		
+		// by Eric Leschinski
+		// content is the data (a string) you'll write to file.
+		// filename is a string filename to write to on server side.
+		// This function uses iFrame as a buffer, it fills it up with your content
+		// and prompts the user to save it out.
+		function save_content_to_file(content, filename){
+		    var dlg = false;
+		    with(document){
+		     ir=createElement('iframe');
+		     ir.id='ifr';
+		     ir.location='about.blank';
+		     ir.style.display='none';
+		     body.appendChild(ir);
+		      with(getElementById('ifr').contentWindow.document){
+		           open("text/plain", "replace");
+		           charset = "utf-8";
+		           write(content);
+		           close();
+		           document.charset = "utf-8";
+		           dlg = execCommand('SaveAs', false, filename);
+		       }
+		       body.removeChild(ir);
+		     }
+		    return dlg;
+		}
+		
+		
 		function getpetaldir(petalname){
 			// look op directory corresponding to petalname. return empty string if not found
 			var petaldir = "";
