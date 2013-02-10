@@ -8,17 +8,22 @@
 	 *
 	 * Version History
 	 * 15/01/2013 V0.1 - 0.9 	Startup, got some nice radial elastic animations going
-	 * 20/01/2013 v8			Refactoring, added url based states using jquery history
-	 * 03/02/2013 v9			Refactoring, added small preview images in expanded main menu
-	 * 06/02/2013 v10			Preview images now grow in place around petal, image collection
+	 * 20/01/2013 v1.0			Refactoring, added url based states using jquery history
+	 * 03/02/2013 v1.1			Refactoring, added small preview images in expanded main menu
+	 * 06/02/2013 v1.2			Preview images now grow in place around petal, image collection
 	 							now explode from petal position.
+	 * 10/02/2013 v1.3			Added brower to view images inside this script instead of loading them
+	 							directly. Advantage is that now you van have next/prev image and caption.
+	 							Captions are read from .txt file by the same name as image. Experimented
+	 							With writing EXIF tags in jpgs but this was too buggy and browser specific.
+	 							Added 
 	 							
 							
 	 *  TODO: - supress mouseover and mouseout during animation
 	 		  - supress animation when going back to petal view. this is just annoying. but how? maybe set var
 	 		  	'animate' when any view inside is loaded, when coming from outside directly, animations will not show
 	 		  - make work on IE8. IE7 can go take a hike, maybe add warning for old browsers
-	 		  - patalnames should be unique, otherswise things go wrong with looking up values.
+	 		  - patalnames should be unique, otherwise things go wrong with looking up values. check this.
 	 		  - expand browser
 	 		  - encode urls to not include spaces, or fix url patterns to deal with spaces
 	 	 	  - Add content! This thing is also working great
@@ -40,7 +45,10 @@
 			#viz						{height: 800px; margin-left: auto; margin-right: auto; width: 800px; position: relative;}
 			#divs						{position:relative}
 			#divs .bar 					{position:absolute}
-			.fullscreenimagecontainer	{background-color:red; position:absolute; z-index:2;}
+			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto; 
+										 border:thin solid black; width:100%;}
+			#imagecontained 			{margin-left: auto; margin-right: auto;}
+			.triggerarea				{background-color: transparent; width:37%; position:absolute; height: 100%; border:red solid thin;}
 			
 		</style>
 	</head>
@@ -49,6 +57,7 @@
 		<div id="divs"></div>
 		<div id="viz"></div>
 		
+		<!-- load file file info on each petal to show -->
 		<script type="text/javascript" src="menu.js"></script>
 		
 		<script type="text/javascript">
@@ -83,20 +92,23 @@
 						
 						// try to match url to pattern like /petal/<petalname>/<filetoshow>
 						// If this matches, you need to show an image directly
-						urlm = state.match("petal/([a-zA-Z0-9_]*)/([a-zA-Z0-9_\.]*)");
-						log("matching  "+state+" for /petal/([a-zA-Z0-9_]*)/([a-zA-Z0-9_\.]*) was: '"+urlm+"'","debug");
+						urlm = state.match("petal/([a-zA-Z0-9_]*)/(.+\..+)");						
 						if(urlm != null){
+							
 							var petalname = urlm[1];
 							var imagename = urlm[2];
-							
+							log("url regex: I need to show image '"+imagename+"' in petal '"+
+								 petalname +"'  directly","debug");
+						
 							
 							remove_images();
 							showimage(petalname,imagename);
 									
 							//TODO remove ring?
 							contract_ring(svg,ANIMATE);
-														//when something has been loaded, animate everything from now on
-							ANIMATE = true;
+							
+							//when coming from a closeup image, don't animate
+							ANIMATE = false;
 							 
 						}
 						
@@ -104,17 +116,13 @@
 						
 						//If this matches you need to show a bunch of images
 						else if(state.match("^petal/") != null){
+							log("url regex: I need to show a bunc of images","debug");
 							var petalname = state.substring(6);
-							var petaldir = getpetaldir(petalname)
-							if(petaldir == ""){
-								var msg = "Could not find '"+state.substring(6)+"'. I don't know which images to load."; 
-								console.log(msg);
-								alert(msg);
-							}
+							
 							startposition = getpetalposition(petalname);
 							remove_images();
 							
-							showimages(petaldir,startposition,ANIMATE);
+							showimages(petalname,startposition,ANIMATE);
 							contract_ring(svg,ANIMATE);
 							//when something has been loaded, animate everything from now on
 							ANIMATE = true;
@@ -135,30 +143,26 @@
 				
 		//=============== end jquery history ==========================================
 		
-		// by Eric Leschinski
-		// content is the data (a string) you'll write to file.
-		// filename is a string filename to write to on server side.
-		// This function uses iFrame as a buffer, it fills it up with your content
-		// and prompts the user to save it out.
-		function save_content_to_file(content, filename){
-		    var dlg = false;
-		    with(document){
-		     ir=createElement('iframe');
-		     ir.id='ifr';
-		     ir.location='about.blank';
-		     ir.style.display='none';
-		     body.appendChild(ir);
-		      with(getElementById('ifr').contentWindow.document){
-		           open("text/plain", "replace");
-		           charset = "utf-8";
-		           write(content);
-		           close();
-		           document.charset = "utf-8";
-		           dlg = execCommand('SaveAs', false, filename);
-		       }
-		       body.removeChild(ir);
-		     }
-		    return dlg;
+		function writetofile(filename,content){
+			// Make ajax POST to php script 'write_to_file.php' to write file
+			// Writing files using jquery is buggy and unreliable
+				var dataString = 'file='+ filename + '&content=' + content;  
+
+				$.ajax({
+				  type: "POST",  
+				  url: "write_to_file.php",  
+				  data: dataString,  
+				  success: function(data, status, xhr) {  
+					$('#contact_form').html("<div id='message'></div>");  
+					$('#message').html("* "+data);
+				  },
+				  error: function(xhr,status,errorText) {
+					$('#message').html("Error: "+errorText +" "+ status+ " "+ xhr);
+
+
+				  }
+				});	
+				
 		}
 		
 		
@@ -184,6 +188,11 @@
 		function showimage(petalname,imagename){
 			//show a single image full screen. Intelligent error if not found, preloads next and prev
 			
+			d3.select("body #divs")
+				.append("div")
+				.attr("id","loadingsign")
+				.text("LOADING...")
+				.style("background-color","grey");
 			
 			var dir = getpetaldir(petalname)
 				if(dir == ""){
@@ -223,32 +232,64 @@
 					var browser = d3.select("body #divs")
 						.append("div")
 						.attr("id","imagecontainer")
+						
+					var inner = browser
+							.append("div")
+							.attr("id","innerimagecontainer")
 						//.style("height","200px")
 						//.style("width","200px")
-						.style("background-color","red");
-						
-					browser.append("div")
-						.style("height","40px")
-						.style("width","100px")
-						.text("next")
-						.style("background-color","white")
-						.style("border","solid black thin")
+						//.style("background-color","red");
+					
+					inner.append("div")
+						.attr("class","triggerarea")						
+						//.style("float","left")
 						.on("click",function(){
-								var nextimageurl = "petal/"+petalname+"/"+dataset[index+1].filename;
+								var nextimageurl = "petal/"+petalname+"/"+dataset[index-1].filename;
 								$.History.go(nextimageurl);
 							})
 							
+					inner.append("div")
+							.attr("class","triggerarea")
+							.style("right","0%")
+							.on("click",function(){
+									var nextimageurl = "petal/"+petalname+"/"+dataset[index+1].filename;
+									$.History.go(nextimageurl);
+								})
+		
+											
+					var image = inner.append("img")
+								//.style("display","none")
+								.attr("src", image_path)
+								.attr("id","imagecontained")
+								.attr("height","100%")
+								.style("display","none");
+					image.on("click",function(){
+							image.attr("height","");
+							image.on("click",function(){
+								image.attr("height","100%");
+							});
+						});
 						
+
+					image.on("load",(function(){
+
+								image.style("display","inherit");
+								})
+					);
+					
+					
+					
 						
-					browser.append("img")
-							//.style("display","none")
-							.attr("src", image_path)
-							.attr("id","imagecontained")
-							.attr("width","70%")
-							.transition()
-								.duration(200)
-								.ease("easeOutExpo")
-								.attr("width","80%");
+
+					
+					//image.transition()
+					//				.duration(200)
+					//				.ease("easeOutExpo")
+				    
+				    //hide loading sign
+				    d3.select("#loadingsign")
+				    	.style("display","none");
+								
 
 				};
 				
@@ -261,10 +302,17 @@
 		
 		
 		
-		function showimages(dir,startpos,ANIMATE){
+		function showimages(petalname,startpos,ANIMATE){
 			// Show scattered images based on csv file containing, x,y,filname,thumb
 			// Explode images from {x,y} startpos
 			if(ANIMATE == null){ANIMATE == true}
+			
+			var dir = getpetaldir(petalname)
+				if(dir == ""){
+					var msg = "Could not find '"+state.substring(6)+"'. I don't know which images to load."; 
+					console.log(msg);
+					alert(msg);
+				}
 			
 			log("showing images in dir '"+dir+"' exploding from position ("+startpos.x+","+startpos.y+")")
 			var currentdir = dir
@@ -303,9 +351,8 @@
 								})
 							// on click show image directly, as file
 							.on("click",function(d,i){
-								var msg = "I am " + image_path(d);
-								console.log(msg);
-								window.location = image_path(d);
+								var imageurl = "petal/"+petalname+"/"+d.filename;
+								$.History.go(imageurl);
 								})
 				//show thumbnail for each image in list
 				images

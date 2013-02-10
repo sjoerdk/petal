@@ -38,8 +38,9 @@
 		var filename = "kees.txt";
 		var content = "er was eens een keer2";
 
-		d3.select("#button").
-			on("click",function(){
+		d3.select("#button")
+			.text("submit")
+			.on("click",function(){
 			    writetofile(filename,$("#contenttosend").val());
 			});  
 			
@@ -53,9 +54,6 @@
     
 		
 		
-			
-		
-		
 
 		
 		function writetofile(filename,content){
@@ -67,7 +65,7 @@
 				  data: dataString,  
 				  success: function(data, status, xhr) {  
 					$('#contact_form').html("<div id='message'></div>");  
-					$('#message').html("response:"+data);
+					$('#message').html("* "+data);
 				  },
 				  error: function(xhr,status,errorText) {
 					$('#message').html("Error: "+errorText +" "+ status+ " "+ xhr);

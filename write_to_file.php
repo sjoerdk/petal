@@ -3,44 +3,44 @@
 // Author : Sjoerd Kerkstra
 //
 // Small utility to write content to a file. I entend to use this in ajax calls
-// from jquery because writing files in jquery is just too annoying
+// from jquery because writing files in jquery is just too annoying.
+//
+// Example in Jquery:
+// * place this file in the same dir as this jquery function
+// 
+/*
+	function writetofile(filename,content){
+		var dataString = 'file='+ filename + '&content=' + content;  
+			$.ajax({  
+			type: "POST",  
+			url: "write_to_file.php",  
+			data: dataString,  
+			success: function(data, status, xhr) {  
+				alert("succes: "data);
+			},
+			error: function(xhr,status,errorText) {
+				alert("Error: "+errorText +" "+ status+ " "+ xhr);
+			}
+		});	
+	}
+*/
+//
+//
+//
 
 //Versions
 //V1 		10/02/2013   -  First working version
 
 
 // ================ globals ==============================
-
-$_DIRECTORY = "./";
-define("DEBUG_PRINT",true);
+define("DEBUG_PRINT",false);
 
 
 // =============== get url params =======================
-
-if(array_key_exists('report', $_GET)){
-	$report = $_GET['report'];
-	//do not allow going up the dir tree. Is this safe enough?
-	$report = str_replace("..", "", $report);
-
-}else
-{
-	$report = "";
-}
 $URL_file = getUrlParamOrDefault("file","","file to write to");
 $URL_content = getUrlParamOrDefault("content","","Content for file");
 
 // ================ main code ===========================
-
-
-
-//check input dir
-if(file_exists($_DIRECTORY)==False){
-  echo("Error: reports dir '".$_DIRECTORY."' could not be found. Stopping script.<br/>\n");
-  exit;
-}
-
-
-
 if(dataWasPosted()==true){
 	//if data was posted that means a save should be done
 	$text = getAllPostedKeysAsText();
@@ -48,9 +48,21 @@ if(dataWasPosted()==true){
 
 	debugPrint("Received the following values:\n". $text);
 	
-	writeToFile($URL_content,$URL_file);
+	$URL_file = "::INVALIDFILE#";
+	$written = writeToFile($URL_content,$URL_file);
+	
+	if($written == true){
+		echo("saved ".$URL_file);
+	}
+	else{
+		echo ('save failed.');
+  	}
+  	
+	
 }
-else{ echo("no post received");}
+else{
+	echo("no post data received");
+}
 
 
 // =================== functions ======================
