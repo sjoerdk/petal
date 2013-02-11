@@ -43,20 +43,26 @@
 			.bar 						{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
 			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
 			#viz						{width:800px; margin-left: auto; margin-right: auto; position: relative;}
-			#divs						{position:relative}
+			#
+			#divs						{position:relative; width:100%; height:100%; top:0px;}
 			#divs .bar 					{position:absolute}
+			#greyoutlayer				{position:fixed; width:100%; height:100%; top:0px; display:none; background-color:black;
+										 filter:alpha(opacity=50); /* IE */ opacity: 0.5; /* Safari, Opera */ -moz-opacity:0.50; /* FireFox */}
+			#imagecontainer				{z-index:2;}
 			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto; 
 										 }
 			#imagecontained 			{margin-left: auto; margin-right: auto;}
-			.triggerarea				{background-color: transparent; width:37%; position:absolute; height: 100%;border:solid thin red;}
+			.triggerarea				{background-color: transparent; width:37%; position:absolute; height: 100%;}
 			
 		</style>
 	</head>
 	<body>
 		
-		<div id="viz"></div>
-		<div id="divs"></div>
 		
+		
+		<div id="viz"></div>
+		<div id="greyoutlayer"></div>
+		<div id="divs"></div>
 		
 		<!-- load file file info on each petal to show -->
 		<script type="text/javascript" src="menu.js"></script>
@@ -104,7 +110,9 @@
 								 petalname +"'  directly","debug");
 						
 							
-							remove_images();
+							//remove_images();
+							remove_zoomed_image();
+							greyout(true,petalname)
 							showimage(petalname,imagename);
 									
 							//TODO remove ring?
@@ -124,6 +132,7 @@
 							log("url regex: I need to show a bunc of images","debug");
 							var petalname = state.substring(6);
 							
+							greyout(false);
 							startposition = getpetalposition(petalname);
 							remove_images();
 							setsvgsize(800);
@@ -199,14 +208,26 @@
 			return {x:d3.select("#"+petalname).attr("cx"),y:d3.select("#"+petalname).attr("cy")};
 		}
 		
+		function greyout(value,petalname){
+			if(value == true){
+				d3.select("#greyoutlayer")
+					.style("display","inherit")
+					.on("click",function(){
+						//on click go back to previous
+						$.History.go('petal/'+petalname);	
+						})
+				
+			}else{
+				d3.select("#greyoutlayer")
+					.style("display","none");
+			
+			}
+		}
+		
 		function showimage(petalname,imagename){
 			//show a single image full screen. Intelligent error if not found, preloads next and prev
 			
-			d3.select("body #divs")
-				.append("div")
-				.attr("id","loadingsign")
-				.text("LOADING...")
-				.style("background-color","grey");
+			
 			
 			var dir = getpetaldir(petalname)
 				if(dir == ""){
@@ -215,6 +236,7 @@
 					alert(msg);
 			}
 			
+			greyout(true,petalname);
 			
 			d3.text(dir+"files.csv", function(datasetText) {
 				var dataset = d3.csv.parse(datasetText);
@@ -251,27 +273,41 @@
 					var inner = browser
 							.append("div")						
 							.attr("id","innerimagecontainer")
-							//.style("width","30%")
-						//.style("height","200px")
-						//.style("width","200px")
-						//.style("background-color","red");
+				
 					
+					function imageurl(petalname,dataset,idx){
+						//loop around
+						len = dataset.length;						
+						if(idx < 0){idx = len + ((idx % len));}
+						idx = idx % len
+						
+						nextimageurl = "petal/"+petalname+"/"+dataset[idx].filename;
+						return nextimageurl;
+					}
+					
+					//prev image triger
 					inner.append("div")
 						.attr("class","triggerarea")						
 						//.style("float","left")
 						.on("click",function(){
-								var nextimageurl = "petal/"+petalname+"/"+dataset[index-1].filename;
+								var nextimageurl = imageurl(petalname,dataset,index-1);
 								$.History.go(nextimageurl);
 							})
-							
+					
+					//go next image trigger		
 					inner.append("div")
 							.attr("class","triggerarea")
 							.style("right","0%")
 							.on("click",function(){
-									var nextimageurl = "petal/"+petalname+"/"+dataset[index+1].filename;
+									var nextimageurl = imageurl(petalname,dataset,index+1);
 									$.History.go(nextimageurl);
 								})
-		
+					
+					d3.select("body #divs")
+									.append("div")
+									.attr("id","loadingsign")
+									.text("LOADING...")
+										.style("background-color","grey");
 											
 					var image = inner.append("img")
 								//.style("display","none")
@@ -290,39 +326,31 @@
 					image.on("load",(function(){
 
 								image.style("display","inherit");
+								//shrinkwrap container div around image
+								synccontainers();
+								//hide loading sign
+							    d3.select("#loadingsign")
+				    				.remove();
+								
 								})
 					);
 					
-					
-					
-						
-
-					
-					//image.transition()
-					//				.duration(200)
-					//				.ease("easeOutExpo")
 				    
-				    //hide loading sign
-				    d3.select("#loadingsign")
-				    	.style("display","none");
 								
 
 				};
 				
-				
+				function synccontainers(){
+					$("#innerimagecontainer").width($("#imagecontained").width())
+				}
 				// shrinkwrapping a div around an image is one of these weird webdev things: sounds simple
-				// but is actually IMPOSSIBLE. Resorting to javascript
-				
+				// but is actually IMPOSSIBLE. Resorting to javascript				
 				d3.select(window).on("resize",function(){
 					//up yours, CSS
-					$("#innerimagecontainer").width($("#imagecontained").width())
+					synccontainers();
 					
-						});
-								//var targetWidth = container.width();
-								//chart.attr("width", targetWidth);
-								//chart.attr("height", Math.round(targetWidth / aspect));
+					});
 						
-				
 			});//end text
 
 		
@@ -379,7 +407,7 @@
 									d3.select(this)
 										.style("z-index","0");
 								})
-							// on click show image directly, as file
+							// on click show image in browser
 							.on("click",function(d,i){
 								var imageurl = "petal/"+petalname+"/"+d.filename;
 								$.History.go(imageurl);
@@ -467,7 +495,7 @@
 										d3.select(this)
 											.style("z-index","0");
 									})
-								// on click show image directly, as file
+								// on click show image in browser
 								.on("click",function(d,i){
 									var msg = "I am " + image_path(d);
 									console.log(msg);
@@ -504,6 +532,7 @@
 					var divs = d3.selectAll("#viz .preview").data([]).exit().remove();
 					
 		}
+		
 		function remove_images(){
 			log("removing all images")
 			var divs = d3.selectAll("#divs div").data([]).exit().remove();
@@ -511,14 +540,21 @@
 			
 		}
 		
+		function remove_zoomed_image(){
+			
+			d3.selectAll("#imagecontainer").data([]).exit().remove();
+		}
+		
 		function contract_ring(svg,ANIMATE){
 			
 			log("contracting ring")
 			//contract ring
 			ring_r = ring_inner;
+			ring_center = {x:30,y:30};
+			//d3.select("body #viz").style("position")
 				
 			if(ANIMATE){
-				ring_center = {x:30,y:30};
+				
 				svg.selectAll("circle")					
 								.transition()				
 									.duration(1000)
@@ -527,7 +563,6 @@
 									.attr("cy",ring_y)
 									.attr("cx",ring_x);
 			}else{
-				ring_center = {x:30,y:30};
 				svg.selectAll("circle")
 					.transition().duration(1) //without transition getpetallocation does not work. Why???
 							.attr("r",5)
