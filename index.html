@@ -46,9 +46,9 @@
 			#divs						{position:relative}
 			#divs .bar 					{position:absolute}
 			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto; 
-										 border:thin solid black; width:100%;}
+										 }
 			#imagecontained 			{margin-left: auto; margin-right: auto;}
-			.triggerarea				{background-color: transparent; width:37%; position:absolute; height: 100%; border:red solid thin;}
+			.triggerarea				{background-color: transparent; width:37%; position:absolute; height: 100%;border:solid thin red;}
 			
 		</style>
 	</head>
@@ -246,10 +246,12 @@
 					var browser = d3.select("body #divs")
 						.append("div")
 						.attr("id","imagecontainer")
+						.style("height","85%")
 						
 					var inner = browser
-							.append("div")
+							.append("div")						
 							.attr("id","innerimagecontainer")
+							//.style("width","30%")
 						//.style("height","200px")
 						//.style("width","200px")
 						//.style("background-color","red");
@@ -275,14 +277,14 @@
 								//.style("display","none")
 								.attr("src", image_path)
 								.attr("id","imagecontained")
-								.attr("height","85%")
-								.style("display","none");
-					image.on("click",function(){
-							image.attr("height","");
-							image.on("click",function(){
-								image.attr("height","100%");
-							});
-						});
+								.style("display","none")
+								.style("height","100%");
+					//image.on("click",function(){
+					//		image.attr("height","");
+					//		image.on("click",function(){
+					//			image.attr("height","100%");
+					//		});
+					//	});
 						
 
 					image.on("load",(function(){
@@ -307,7 +309,21 @@
 
 				};
 				
-			});
+				
+				// shrinkwrapping a div around an image is one of these weird webdev things: sounds simple
+				// but is actually IMPOSSIBLE. Resorting to javascript
+				
+				d3.select(window).on("resize",function(){
+					//up yours, CSS
+					$("#innerimagecontainer").width($("#imagecontained").width())
+					
+						});
+								//var targetWidth = container.width();
+								//chart.attr("width", targetWidth);
+								//chart.attr("height", Math.round(targetWidth / aspect));
+						
+				
+			});//end text
 
 		
 		
@@ -413,6 +429,8 @@
 				//location = {x:location.x-20,y:location.y-20};
 				
 				log("showing preview images from dir '"+dir+"' at ("+location.x+","+location.y+")");
+				
+				
 				var currentdir = dir
 				d3.text(dir+"files.csv", function(datasetText) {
 					var dataset = d3.csv.parse(datasetText).slice(0,5);
@@ -472,9 +490,12 @@
 								.duration(200)
 								.ease("easeOutExpo")
 								.attr("width","60px")
-							
+			
+			
+			
 			});//end d3.text
-		};//end showimages
+			
+		};//end showimagefullsreen
 		
 		
 		function remove_preview(){
