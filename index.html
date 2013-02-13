@@ -25,6 +25,7 @@
 	 		  - encode urls to not include spaces, or fix url patterns to deal with spaces
 	 	 	  - make load just be the loading gif, make image pop up from stack, make image go back to stack
 	 	 	  - make load animation normal, now it's weird
+	 	 	  - Include captions!
 	 			
 	 
 	 */-->
@@ -84,10 +85,21 @@
 		var image_offset = {x:0,y:0}; //translate all images
 		var image_rescale = {x:1,y:1}; //for squashing or expanding the blob of images
 		
-		// Do not show animation when loading from outside directly.
-		// Especially when viewing images directly, going back should not re-show
-		// animations because its really stupid and showy 
+		// ============== global variables ==========================
+		// Basic state of the project is set using jquery history below: single url
+		// translates to single state. However, certain info you want to pass via
+		// another route. Mainly info on whether and how to animate transitions.
+		
+		// Do not show animation when loading url cold, from outside directly.
+		// When I load an url for the first time I don't want it exploding on my
+		// Screen
 		var ANIMATE = false; 
+		
+		// For transition between lots of thumbs and zoomed image. Pop up image
+		// and pop down image from and to this location respectively
+		var CURRENT_IMG_LOCATION = {x:-1,y:-1};
+		var CURRENT_IMG_THUMB_SIZE = {width:-1,y:-1};
+		
 		
 		
 		//================ jquery history ===========================
@@ -225,8 +237,6 @@
 		function showimage(petalname,imagename){
 			//show a single image full screen. Intelligent error if not found, preloads next and prev
 			
-			
-			
 			var dir = getpetaldir(petalname)
 				if(dir == ""){
 					var msg = "Could not find '"+petalname+"'. I don't know which images to load."; 
@@ -312,7 +322,9 @@
 								.attr("src", image_path)
 								.attr("id","imagecontained")
 								.style("display","none")
-								.style("height","100%");
+								.style("height","100%");								
+							//		CURRENT_IMG_LOCATION = image_coords(d); //set these vars for nice pop up effect. Nice.
+							//	CURRENT_IMG_THUMB_SIZE = {
 					//image.on("click",function(){
 					//		image.attr("height","");
 					//		image.on("click",function(){
@@ -324,7 +336,9 @@
 					image.on("load",(function(){
 
 								image.style("display","inherit");
-								//shrinkwrap container div around image
+								// shrinkwrap container div around image, to make clicking 
+								// image sides go next/prev
+								
 								synccontainers();
 								//hide loading sign
 							    d3.select("#loadingsign")
@@ -382,6 +396,7 @@
 				var image_thumb_path = function(d){return currentdir+d.thumb};
 				var image_thumb_url = function(d){return "url("+currentdir+d.thumb+")"};
 				var image_coords = function(d){return "("+x(d)+","+y(d)+")"};
+				var image_coords_dict = function(d){return {"x":x(d),"y":y(d)};};
 				
 				var startposx = function(d){if(ANIMATE){return startpos.x;}else{return x(d);}}
 				var startposy = function(d){if(ANIMATE){return startpos.y;}else{return y(d);}}
@@ -409,6 +424,9 @@
 							.on("click",function(d,i){
 								d3.select(this)
 										.style("z-index","-1");
+								CURRENT_IMG_LOCATION = image_coords_dict(d); //set these vars for nice pop up effect. Nice.
+								CURRENT_IMG_THUMB_SIZE = {"width":$(this).width(),"height":$(this).height()};
+								ANIMATE = true;
 								var imageurl = "petal/"+petalname+"/"+d.filename;
 								$.History.go(imageurl);
 								})
