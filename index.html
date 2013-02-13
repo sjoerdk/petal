@@ -17,16 +17,14 @@
 	 							Captions are read from .txt file by the same name as image. Experimented
 	 							With writing EXIF tags in jpgs but this was too buggy and browser specific.
 	 							Added 
-	 							
+	 * 13/02/2013 v1.4			Removed even listening on petals when in transition. This cancels any weird
+	 							bouncing when contracting or expanding menu
 							
-	 *  TODO: - supress mouseover and mouseout during animation
-	 		  - supress animation when going back to petal view. this is just annoying. but how? maybe set var
-	 		  	'animate' when any view inside is loaded, when coming from outside directly, animations will not show
-	 		  - make work on IE8. IE7 can go take a hike, maybe add warning for old browsers
+	 *  TODO: - make work on IE8. IE7 can go take a hike, maybe add warning for old browsers
 	 		  - patalnames should be unique, otherwise things go wrong with looking up values. check this.
-	 		  - expand browser
 	 		  - encode urls to not include spaces, or fix url patterns to deal with spaces
 	 	 	  - make load just be the loading gif, make image pop up from stack, make image go back to stack
+	 	 	  - make load animation normal, now it's weird
 	 			
 	 
 	 */-->
@@ -409,6 +407,8 @@
 								})
 							// on click show image in browser
 							.on("click",function(d,i){
+								d3.select(this)
+										.style("z-index","-1");
 								var imageurl = "petal/"+petalname+"/"+d.filename;
 								$.History.go(imageurl);
 								})
@@ -501,6 +501,7 @@
 									console.log(msg);
 									window.location = image_path(d);
 									})
+									
 					images
 						.transition()
 						.duration(200)
@@ -555,35 +556,44 @@
 				
 			if(ANIMATE){
 				
-				svg.selectAll("circle")					
-								.transition()				
-									.duration(1000)
-									.ease("elastic")
-									.attr("r",5)
-									.attr("cy",ring_y)
-									.attr("cx",ring_x);
+				svg.selectAll("circle")
+						.attr("listen","false")
+						.transition()				
+							.duration(1000)
+							.ease("elastic")
+							.attr("r",5)
+							.attr("cy",ring_y)
+							.attr("cx",ring_x)
+							.each("end", function(){d3.select(this).attr("listen","true");});
+									
 			}else{
 				svg.selectAll("circle")
+					.attr("listen","false")
 					.transition().duration(1) //without transition getpetallocation does not work. Why???
 							.attr("r",5)
 							.attr("cy",ring_y)
-							.attr("cx",ring_x);
+							.attr("cx",ring_x)
+							.each("end", function(){d3.select(this).attr("listen","true");});
 				
 			}
 			menuexpanded = false;
 		}
 		
+		
+		
 		function expand_ring(svg){
-			log("expanding ring")
+			log("expanding ring","debug")
 			ring_r = ring_outer;
-			ring_center = {x:400,y:300};
-			svg.selectAll("circle")					
+			ring_center = {x:400,y:300};			
+			svg.selectAll("circle")	
+				.attr("listen","false") // do not listen to any to hover events while transitioning
 				.transition()				
 					.duration(1000)
 					.ease("elastic")
 					.attr("r",30)
 					.attr("cy",ring_y)
 					.attr("cx",ring_x)
+					.each("end", function(){d3.select(this).attr("listen","true");})
 			menuexpanded = true;
 		}
 		
@@ -662,13 +672,15 @@
 				.attr("i",function(d,i){return i;})
 						
 				.on("mouseover", function(d,i){
-					if(menuexpanded == false){ //you can set custom attributes!
-						$.History.go('home');
+					if(d3.select(this).attr("listen") == "true"){//only fire if you are not in animation. 
+																 //Weird shock effects without this check
+						if(menuexpanded == false){ //petals are contracted: go to main menu (expand petals)
+							$.History.go('home');
+							}
+						else{ //petals are expanded, show contents preview
+							remove_preview();
+							showpreview(d.dir,{x:ring_x(d,i),y:ring_y(d,i)});
 						}
-					else{
-						
-						remove_preview();
-						showpreview(d.dir,{x:ring_x(d,i),y:ring_y(d,i)});
 					}
 				 })
 				 .on("mouseout", function(){
