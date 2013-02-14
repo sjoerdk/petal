@@ -68,13 +68,16 @@ else{
 
 function writeToFile($content,$file_in){
 	
+	$output = $content;
 	// Open the file to get existing content
-	$current = file_get_contents($file_in);
-	// write over 
-	$current = $content;
+	if(file_exists($file_in)){
+		$current = file_get_contents($file_in);
+		// currenlty write over current content 
+		//$output = $content.$output;
+	}
 	// Write the contents back to the file
-	file_put_contents($file_in, $current);
-	debugPrint("Wrote '".$content."' to file '".$file_in."'");
+	file_put_contents($file_in, $output);
+	echo("Wrote '".$output."' to file '".$file_in."'");
 }
 
 
@@ -135,8 +138,6 @@ function getUrlParamOrDefault($URLParamStr,$DefaultIfNotSet,$paramDescription){
 	}
 	
 	registerUrlParam($URLParamStr,$DefaultIfNotSet,$paramDescription,$value);
-	
-	echo("got".$value);
 	
 	return $value;
 }
