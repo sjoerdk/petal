@@ -51,10 +51,13 @@
 			#greyoutlayer				{position:fixed; width:100%; height:100%; top:0px; display:none; background-color:black;
 										 filter:alpha(opacity=50); /* IE */ opacity: 0.5; /* Safari, Opera */ -moz-opacity:0.50; /* FireFox */}
 			#imagecontainer				{z-index:2;}
-			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto; 
-										 }
+			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto;}
 			#imagecontained 			{margin-left: auto; margin-right: auto;}
 			.triggerarea				{background-color: transparent; width:37%; position:absolute; height: 100%;}
+			#captioncontainer			{width:400px; margin-left:auto; margin-right:auto; position:relative;}
+			.caption					{background-color: #dddddd;;border-style: solid;border:none;padding: 1ex; width:100%}
+			#button						{width:4ex; height:3ex; background-color:#aaaaaa; padding: 3px;}
+			#message					{background-color:white;}
 			
 		</style>
 	</head>
@@ -172,7 +175,82 @@
 		//=============== end jquery history ==========================================
 		
 		
+		function addcaption(selector,filename){
+			// Make this div into a caption with content linked to text file filname. Add save functions.
+			// params:
+			//   selector - id or class like "#container".only takes the first object if selector 
+			//				targets multiple
+			//   filename - Filepath. Try to read caption content from this file, and save here.
+			// 
+			div = d3.select(selector);
+			divname = div.attr("id");
+
+
+
+			var caption = div.append("input")
+							.attr("type","text")
+							.attr("class","caption")
+
+			var button = div.append("div")
+							.attr("id","button")
+							.text("save")
+
+			var message = div.append("div")
+							.attr("id","message")
+
+			button.on("click",function(){ //on click save and show success or failure
+					writetofile(filename,caption.property("value"),function(status){
+										message.text(status);		
+									});
+
+
+				});  
+
+			//get current content of file to put in textbox
+			 d3.text(filename, function(unparsedData)
+			  {
+			   var data = d3.csv.parseRows(unparsedData);
+
+			   caption.property("value",data)
+			   //$("#caption").val(data);
+			  }).on("error",function(){
+					log("Caption file '"+filename+"' not found. Not displaying caption","debug");
+									});
+
+			return div;
+			}
+
+		
+		function writetofile(filename,content,callback){
+			// write content to filename by calling php script. Jquery is too unreliable with  
+			// writing files.
+
+			var status = "";
+
+			$.ajax({  
+			  type: "post",  
+			  url: "write_to_file.php",  
+			  data: {"file":filename,"content":content},  
+			  success: function(data, status, xhr) {  
+				status = data;
+				callback(status);
+			  },
+			  error: function(xhr,status,errorText) {
+				status = "Error: "+errorText +" "+ status+ " "+ xhr;
+				callback(status);
+
+			  }
+			});	
+
+
+		}
+		
+		
+		
+		
+		
 		function setsvgsize(size){
+			// set size of canvas all the nice circles are bouncing on
 			svg.attr("width", size)   
 		       .attr("height",size); 
 		    d3.select("body #viz")
@@ -260,6 +338,7 @@
 				var image_thumb_path = function(d){return currentdir+d.thumb};
 				var image_thumb_url = function(d){return "url("+currentdir+d.thumb+")"};
 				var image_coords = function(d){return "("+x(d)+","+y(d)+")"};
+				var caption_file = function(){parts=filename.split("."); parts.splice(parts.length-1); return parts+".txt"};
 				
 				
 				//find out which image this is
@@ -281,7 +360,9 @@
 						.append("div")
 						.attr("id","imagecontainer")
 						.style("height","85%")
-						
+					
+					
+					
 					var inner = browser
 							.append("div")						
 							.attr("id","innerimagecontainer")
@@ -320,7 +401,6 @@
 						.attr("id","loadingsign")
 						.attr("class","loading")
 									
-
 											
 					var image = inner.append("img")
 								//.style("display","none")
@@ -329,6 +409,11 @@
 								.attr("id","imagecontained")
 								.style("display","none")
 								.style("height","100%")
+					
+					var caption = browser
+							.append("div")						
+							.attr("id","captioncontainer")
+
 					
 					image.transition()
 									.style("opacity","1")			
@@ -341,11 +426,15 @@
 								// image sides go next/prev
 								
 								synccontainers();
-								//hide loading sign
+								// hide loading sign
 							    d3.select("#loadingsign")
 				    				.remove();
 								
+								// show caption
+								addcaption("#captioncontainer","kees.txt");
+								
 								})
+								
 					);
 					
 				    
@@ -689,6 +778,7 @@
 				.attr("fill",function(d,i) {return colors(i);})
 				.attr("id",function(d,i){return d.name})
 				.attr("i",function(d,i){return i;})
+				.attr("listen","true")
 						
 				.on("mouseover", function(d,i){
 					if(d3.select(this).attr("listen") == "true"){//only fire if you are not in animation. 
