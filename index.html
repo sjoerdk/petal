@@ -52,11 +52,13 @@
 										 filter:alpha(opacity=50); /* IE */ opacity: 0.5; /* Safari, Opera */ -moz-opacity:0.50; /* FireFox */}
 			#imagecontainer				{z-index:2;}
 			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto;}
+			#triggercontainer			{width:100%;}
 			#imagecontained 			{margin-left: auto; margin-right: auto;}
 			.triggerarea				{background-color: transparent; width:37%; position:absolute; height: 100%;}
-			#captioncontainer			{width:400px; margin-left:auto; margin-right:auto; position:relative;}
-			.caption					{background-color: #dddddd;;border-style: solid;border:none;padding: 1ex; width:100%}
-			#button						{width:4ex; height:3ex; background-color:#aaaaaa; padding: 3px;}
+			#captioncontainer			{margin-left:auto; margin-right:auto; position:relative;}
+			.caption					{background-color: #eae1cb;;border-style: solid;border:none;padding: 0.3ex; width:90%; font-family: helvetica;
+										 height: 1.7em;margin-top: 1ex; margin-left:5%;}
+			#button						{width:4ex; height:3ex; background-color:#aaaaaa; padding: 3px; }
 			#message					{background-color:white;}
 			
 		</style>
@@ -187,9 +189,28 @@
 
 
 
-			var caption = div.append("input")
+			var caption = div.append("textarea")
 							.attr("type","text")
 							.attr("class","caption")
+							.on("keydown",function(){
+								//13 = enter, 16 = shift
+								if (d3.event.keyCode==13){ 
+									
+									d3.event.preventDefault();
+									//now call the code to submit your form
+									//save this text
+									writetofile(filename,caption.property("value"),function(status){
+										message.text(status);		
+									});
+									
+									return;
+									};
+							 })
+							
+							
+							    
+    			
+							
 
 			var button = div.append("div")
 							.attr("id","button")
@@ -334,11 +355,11 @@
 				var x = function(d){return (parseInt(d.x)+image_offset.x)*image_rescale.x};
 				var y = function(d){return (parseInt(d.y)+image_offset.y)*image_rescale.y};
 				var image_path = dir+"/"+imagename
-				var image_url = function(d){return "url("+currentdir+d.filename+")"};
-				var image_thumb_path = function(d){return currentdir+d.thumb};
+				var image_url = function(d){return "url("+dir+d.filename+")"};
+				var image_thumb_path = function(d){return dir+d.thumb};
 				var image_thumb_url = function(d){return "url("+currentdir+d.thumb+")"};
 				var image_coords = function(d){return "("+x(d)+","+y(d)+")"};
-				var caption_file = function(){parts=filename.split("."); parts.splice(parts.length-1); return parts+".txt"};
+				var caption_file = function(){parts=imagename.split("."); parts.splice(parts.length-1); return dir+parts+".txt"};
 				
 				
 				//find out which image this is
@@ -367,6 +388,10 @@
 							.append("div")						
 							.attr("id","innerimagecontainer")
 				
+					var triggercontainer = inner
+											.append("div")
+											.attr("id","triggercontainer")
+											
 					
 					function imageurl(petalname,dataset,idx){
 						//loop around
@@ -379,7 +404,7 @@
 					}
 					
 					//prev image triger
-					inner.append("div")
+					triggercontainer.append("div")
 						.attr("class","triggerarea")						
 						//.style("float","left")
 						.on("click",function(){
@@ -388,7 +413,7 @@
 							})
 					
 					//go next image trigger		
-					inner.append("div")
+					triggercontainer.append("div")
 							.attr("class","triggerarea")
 							.style("right","0%")
 							.on("click",function(){
@@ -410,7 +435,7 @@
 								.style("display","none")
 								.style("height","100%")
 					
-					var caption = browser
+					var caption = inner
 							.append("div")						
 							.attr("id","captioncontainer")
 
@@ -431,7 +456,7 @@
 				    				.remove();
 								
 								// show caption
-								addcaption("#captioncontainer","kees.txt");
+								addcaption("#captioncontainer",caption_file());
 								
 								})
 								
