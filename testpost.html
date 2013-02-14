@@ -10,16 +10,13 @@
 		<script type="text/javascript" src="jquery-history/scripts/jquery.history.min.js"></script>
 		<style type="text/css">
 			body 						{background-color: #252525;}
-			.bar 						{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
-			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
-			#button						{width:40px; height:20px; background-color:red;}
-			#message					{background-color:white;}
-			#currentcontent				{background-color:yellow;}
 			
-			#viz						{height: 800px; margin-left: auto; margin-right: auto; width: 800px; position: relative;}
-			#divs						{position:relative}
-			#divs .bar 					{position:absolute}
-			.fullscreenimagecontainer	{background-color:red; position:absolute; z-index:2;}
+			
+			.captioncontainer			{width:400px; margin-left:auto; margin-right:auto;}
+			.caption					{background-color: #dddddd;;border-style: solid;border:none;padding: 1ex;}
+			#button						{width:4ex; height:3ex; background-color:#aaaaaa; padding: 3px;}
+			#message					{background-color:white;}
+			
 			
 			
 			
@@ -27,44 +24,53 @@
 	</head>
 	<body>
 		
-		<div id="divs">
-		<div id="button"></div>
-		<div id="message"></div>
-		<div id="currentcontent"></div>
-		<INPUT TYPE="text" NAME="contenttosend" id="contenttosend" SIZE="40">
+		<div class="captioncontainer">
+			
+			
+			<INPUT TYPE="text" NAME="caption1" class="caption" id="caption" SIZE="40">
+			<div><div id="button"></div><div id="message"></div>
+			</div>
+			
 		</div>
+		
+		
 	<script>
+		var LOG_LVLS = {"debug":0,"info":1,"warning":2,"error":3};
+		var LOG_LVL = "debug";
+		
+		
 		
 		var filename = "kees.txt";
 		var content = "er was eens een keer2";
+		var writetofilescript = "write_to_file.php";
 
 		d3.select("#button")
-			.text("submit")
+			.text("save")
 			.on("click",function(){
-			    writetofile(filename,$("#contenttosend").val());
+			    writetofile(filename,$("#caption").val());
 			});  
 			
 		//get current content of file
 		 d3.text(filename, function(unparsedData)
 		  {
 		   var data = d3.csv.parseRows(unparsedData);
-		   d3.select("#currentcontent").text("current content of '"+ filename +"': "+data);
-		   $("#contenttosend").val(data);
-		  });
+		   
+		   $("#caption").val(data);
+		  }).on("error",function(){
+		  		log("Caption file '"+filename+"' not found. Not displaying caption","debug");
+		  						})
+		  ;
     
 		
-		
-
-		
+				
 		function writetofile(filename,content){
 			    var dataString = 'file='+ filename + '&content=' + content;  
 
 				$.ajax({  
-				  type: "POST",  
+				  type: "post",  
 				  url: "write_to_file.php",  
-				  data: dataString,  
+				  data: {"file":filename,"content":content},  
 				  success: function(data, status, xhr) {  
-					$('#contact_form').html("<div id='message'></div>");  
 					$('#message').html("* "+data);
 				  },
 				  error: function(xhr,status,errorText) {
@@ -75,7 +81,13 @@
 				});	
 		
 		}
-		
+		function log(msg,lvl){
+					if(lvl == null){lvl = "info";}
+					if(LOG_LVLS[lvl] >= LOG_LVLS[LOG_LVL]){			
+						console.log("* "+lvl+" - "+msg);
+					}
+		}
+
 		
     
 	</script>
