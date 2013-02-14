@@ -41,24 +41,23 @@ $URL_file = getUrlParamOrDefault("file","","file to write to");
 $URL_content = getUrlParamOrDefault("content","","Content for file");
 
 // ================ main code ===========================
-if(dataWasPosted()==true){
+if(true){//dataWasPosted()==true){
 	//if data was posted that means a save should be done
 	$text = getAllPostedKeysAsText();
 	debugPrint("DEBUG Data was posted<br>\n");
 
 	debugPrint("Received the following values:\n". $text);
 	
-	$URL_file = "::INVALIDFILE#";
+	
 	$written = writeToFile($URL_content,$URL_file);
 	
 	if($written == true){
-		echo("saved ".$URL_file);
+		debugPrint("saved ".$URL_file);
 	}
 	else{
-		echo ('save failed.');
+		debugPrint ('save failed.');
   	}
-  	
-	
+  		
 }
 else{
 	echo("no post data received");
@@ -123,8 +122,11 @@ function keyValuePairToText($key,$value){
 
 // get a parameter from the URL used to call this script (e.g. ?doThisAndThat = 1&name=kees etc..). Put default if not found.
 function getUrlParamOrDefault($URLParamStr,$DefaultIfNotSet,$paramDescription){
-		
+	
 	$value = $_POST[$URLParamStr];
+	
+	if(empty($value)){$value = $_GET[$URLParamStr];}
+	
 	if($value != ""){	
 	// if a value is given keep that 
 
@@ -133,6 +135,8 @@ function getUrlParamOrDefault($URLParamStr,$DefaultIfNotSet,$paramDescription){
 	}
 	
 	registerUrlParam($URLParamStr,$DefaultIfNotSet,$paramDescription,$value);
+	
+	echo("got".$value);
 	
 	return $value;
 }
