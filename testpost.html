@@ -13,7 +13,7 @@
 			
 			
 			.captioncontainer			{width:400px; margin-left:auto; margin-right:auto;}
-			.caption					{background-color: #dddddd;;border-style: solid;border:none;padding: 1ex;}
+			.caption					{background-color: #dddddd;;border-style: solid;border:none;padding: 1ex; width:100%}
 			#button						{width:4ex; height:3ex; background-color:#aaaaaa; padding: 3px;}
 			#message					{background-color:white;}
 			
@@ -25,14 +25,16 @@
 	<body>
 		
 		<div class="captioncontainer">
-			
-			
 			<INPUT TYPE="text" NAME="caption1" class="caption" id="caption" SIZE="40">
 			<div><div id="button"></div><div id="message"></div>
 			</div>
-			
 		</div>
 		
+		
+		<div style="height:60px; width:100%; background-color:#555555;">spacer</div>
+		
+		
+		<div id="autocaption" style="width:300px; border: solid thin red; margin-left:auto; margin-right:auto;"></div>
 		
 	<script>
 		var LOG_LVLS = {"debug":0,"info":1,"warning":2,"error":3};
@@ -58,27 +60,89 @@
 		   $("#caption").val(data);
 		  }).on("error",function(){
 		  		log("Caption file '"+filename+"' not found. Not displaying caption","debug");
-		  						})
-		  ;
+		  						});
+		  
     
+    
+    	//try to add everything in code, without defining html 
+    	var kees = addcaption("#autocaption","kees.txt");
+    
+    	
+    	//<div class="captioncontainer">
+			//		<INPUT TYPE="text" NAME="caption1" class="caption" id="caption" SIZE="40">
+			//		<div><div id="button"></div><div id="message"></div>
+			//		</div>
+		//</div>
+    
+    	function addcaption(selector,filename){
+    		// Make this div into a caption with content linked to text file filname. Add save functions.
+    		// params:
+    		//   selector - id or class like "#container".only takes the first object if selector 
+    		//				targets multiple
+    		//   filename - Filepath. Try to read caption content from this file, and save here.
+    		// 
+    		div = d3.select(selector);
+    		divname = div.attr("id");
+    		
+    		
+    		
+    		var caption = div.append("input")
+							.attr("type","text")
+							.attr("class","caption")
+    		
+    		var button = div.append("div")
+							.attr("id","button")
+							.text("save")
+    		
+    		var message = div.append("div")
+    						.attr("id","message")
+
+			button.on("click",function(){ //on click save and show success or failure
+					writetofile(filename,caption.property("value"),function(status){
+										message.text(status);		
+									});
+					
+
+				});  
+    			
+    		//get current content of file to put in textbox
+			 d3.text(filename, function(unparsedData)
+			  {
+			   var data = d3.csv.parseRows(unparsedData);
+			   
+			   caption.property("value",data)
+			   //$("#caption").val(data);
+			  }).on("error",function(){
+					log("Caption file '"+filename+"' not found. Not displaying caption","debug");
+									});
+
+    		return div;
+    		}
+    		
+    	
 		
 				
-		function writetofile(filename,content){
-			    var dataString = 'file='+ filename + '&content=' + content;  
+		function writetofile(filename,content,callback){
+				// write content to filename by calling php script. Jquery is too unreliable with  
+				// writing files.
+				
+			    var status = "";
 
 				$.ajax({  
 				  type: "post",  
 				  url: "write_to_file.php",  
 				  data: {"file":filename,"content":content},  
 				  success: function(data, status, xhr) {  
-					$('#message').html("* "+data);
+					status = data;
+					callback(status);
 				  },
 				  error: function(xhr,status,errorText) {
-					$('#message').html("Error: "+errorText +" "+ status+ " "+ xhr);
-
+					status = "Error: "+errorText +" "+ status+ " "+ xhr;
+					callback(status);
 
 				  }
 				});	
+				
 		
 		}
 		function log(msg,lvl){
