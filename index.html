@@ -383,7 +383,7 @@
 					alert("could not find "+imagename+"");
 				}else{
 					
-					log("showing "+imagename+"");
+					log("showing "+imagename+"","debug");
 					//show image full screen
 					var browser = d3.select("body #divs")
 						.append("div")
@@ -454,7 +454,7 @@
 
 					image.on("load",(function(){
 
-								image.style("display","inherit");
+								image.style("display","Inline");  //display = inherit cannot be set in IE9?
 								// shrinkwrap container div around image, to make clicking 
 								// image sides go next/prev
 								
