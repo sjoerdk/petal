@@ -137,8 +137,8 @@
 							//remove_images();
 							remove_zoomed_image();
 							greyout(true,petalname)
-							showimage(petalname,imagename);
-									
+							log("test!");
+							showimage(petalname,imagename);		
 							//TODO remove ring?
 							contract_ring(svg,ANIMATE);
 							
@@ -330,9 +330,10 @@
 		}
 		
 		function greyout(value,petalname){
+			log("setting greyout = "+value+", onclick return to petal '"+petalname+"'");
 			if(value == true){
-				d3.select("#greyoutlayer")
-					.style("display","inherit")
+				d3.select("#greyoutlayer")					
+					.style("display","Inline") //display = Inherit cannot be set in IE9?
 					.on("click",function(){
 						//on click go back to previous
 						$.History.go('petal/'+petalname);	
@@ -347,7 +348,7 @@
 		
 		function showimage(petalname,imagename){
 			//show a single image full screen. Intelligent error if not found, preloads next and prev
-			
+			log("showing '"+imagename+"' in petal '"+petalname+"', zoomed in image browser");
 			var dir = getpetaldir(petalname)
 				if(dir == ""){
 					var msg = "Could not find '"+petalname+"'. I don't know which images to load."; 
@@ -356,7 +357,6 @@
 			}
 			
 			greyout(true,petalname);
-			
 			d3.text(dir+"files.csv", function(datasetText) {
 				var dataset = d3.csv.parse(datasetText);
 				//some convenience functions
@@ -458,7 +458,7 @@
 								// shrinkwrap container div around image, to make clicking 
 								// image sides go next/prev
 								
-								synccontainers();
+								onscreenresize();
 								// hide loading sign
 							    d3.select("#loadingsign")
 				    				.remove();
@@ -475,14 +475,16 @@
 
 				};
 				
-				function synccontainers(){
+				function onscreenresize(){
+					// Set these as jquery because css cannot do this.
+					$("#innerimagecontainer").height($(window).height()*0.8+"px");
 					$("#innerimagecontainer").width($("#imagecontained").width())
 				}
 				// shrinkwrapping a div around an image is one of these weird webdev things: sounds simple
 				// but is actually IMPOSSIBLE. Resorting to javascript				
 				d3.select(window).on("resize",function(){
 					//up yours, CSS
-					synccontainers();
+					onscreenresize();
 					
 					});
 						
@@ -512,8 +514,8 @@
 			d3.text(dir+"files.csv", function(datasetText) {
 				var dataset = d3.csv.parse(datasetText);
 				//some convenience functions
-				var x = function(d){return (parseInt(d.x)+image_offset.x)*image_rescale.x};
-				var y = function(d){return (parseInt(d.y)+image_offset.y)*image_rescale.y};
+				var x = function(d){return ((parseInt(d.x)+image_offset.x)*image_rescale.x)+"px"};
+				var y = function(d){return ((parseInt(d.y)+image_offset.y)*image_rescale.y)+"px"};
 				var image_path = function(d){return currentdir+d.filename};
 				var image_url = function(d){return "url("+currentdir+d.filename+")"};
 				var image_thumb_path = function(d){return currentdir+d.thumb};
@@ -521,8 +523,8 @@
 				var image_coords = function(d){return "("+x(d)+","+y(d)+")"};
 				var image_coords_dict = function(d){return {"x":x(d),"y":y(d)};};
 				
-				var startposx = function(d){if(ANIMATE){return startpos.x;}else{return x(d);}}
-				var startposy = function(d){if(ANIMATE){return startpos.y;}else{return y(d);}}
+				var startposx = function(d){if(ANIMATE){return startpos.x+"px";}else{return x(d);}}
+				var startposy = function(d){if(ANIMATE){return startpos.y+"px";}else{return y(d);}}
 				
 					var divs = d3.select("body #viz");
 				var images = divs.selectAll("div")
@@ -569,7 +571,8 @@
 			};//end showimages
 			
 			function showimagefullscreen(image_path){
-				// very simple image brower. All these only things are way to fancy
+				// very simple image brower. All these online things are way to fancy
+				
 				
 				//find position of topleft of image to make it centered. I am quite amazed this works wrt loading
 				var centerleft = function(){return Math.max((($(window).width()-$("#fullscreenimage").width())/2),0)+"px";}
@@ -685,7 +688,7 @@
 		}
 		
 		function remove_zoomed_image(){
-			
+			log("removing zoomed image (if any)","debug");
 			d3.selectAll("#imagecontainer").data([]).exit().remove();
 		}
 		
