@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="en">
 
 	<!--/*
@@ -35,6 +35,12 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Petals</title>
+		<!--[if lt IE 8]>
+					<script type="text/javascript" src="aight.min.js"></script>
+				<![endif]-->
+				
+				
+		<meta http-equiv="X-UA-Compatible" content="IE=Edge"> <!--needed for d3 ie8 compatibility  -->
 		<script type="text/javascript" src="d3.v3/d3.v3.min.js"></script>
 		<script type="text/javascript" src="jquery-history/scripts/jquery-1.4.2.min.js"></script>
 		<script type="text/javascript" src="jquery-history/scripts/jquery.history.min.js"></script>
@@ -273,11 +279,12 @@
 		
 		function setsvgsize(size){
 			// set size of canvas all the nice circles are bouncing on
-			svg.attr("width", size)   
-		       .attr("height",size); 
+			log("setting svg width,height to "+size,"debug");
+			svg.attr("width", size+"px")   
+		       .attr("height",size+"px"); 
 		    d3.select("body #viz")
 		    	
-		    	.style("height",size)
+		    	.style("height",size+"px")
 		}
 		
 		function writetofile(filename,content){
@@ -598,12 +605,14 @@
 					var dataset = d3.csv.parse(datasetText).slice(0,5);
 					var locations = ringlocations(dataset.length,location,80);
 					//log(JSON.stringify(locations));
-					log(locations.length);
+					log("number of locations in ring: "+locations.length,"debug");
 					//some convenience functions
-					var x = function(d,i){return (locations[i].x+image_offset.x)};
-					var y = function(d,i){return (locations[i].y+image_offset.y)};
-					//var x = function(d,i){log(dataset.length+"*"+locations[i]+" - "+i); return locations[i-1]};
-					//var y = function(d,i){return i*50};
+					//var x = function(d,i){return (locations[i].x+image_offset.x)};
+					//var y = function(d,i){return (locations[i].y+image_offset.y)};
+					var x = function(d,i){return (locations[i].x+image_offset.x)+"px"};
+					var y = function(d,i){return (locations[i].y+image_offset.y)+"px"};
+					
+					
 					var image_path = function(d){return currentdir+d.filename};
 					var image_url = function(d){return "url("+currentdir+d.filename+")"};
 					var image_thumb_path = function(d){return currentdir+d.thumb};
