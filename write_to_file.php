@@ -77,7 +77,8 @@ function writeToFile($content,$file_in){
 	}
 	// Write the contents back to the file
 	file_put_contents($file_in, $output);
-	echo("Wrote '".$output."' to file '".$file_in."'");
+	debugprint("Wrote '".$output."' to file '".$file_in."'");
+	echo("saved to '".$file_in."'");
 }
 
 
