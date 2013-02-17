@@ -50,17 +50,21 @@
 			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
 			.loading					{background-image:url(./ajax-loader.gif); background-repeat: no-repeat;}
 			#loadingsign	   			{height: 34px; margin-left: auto; margin-right: auto; margin-top: 200px; width:34px;}
-			#viz						{width:800px; margin-left: auto; margin-right: auto; position: relative;}
+			#viz						{width:800px; margin-left: auto; margin-right: auto; position:relative;}
 			#
 			#divs						{position:relative; width:100%; height:100%; top:0px;}
 			#divs .bar 					{position:absolute}
 			#greyoutlayer				{position:fixed; width:100%; height:100%; top:0px; display:none; background-color:black;
 										 filter:alpha(opacity=50); /* IE */ opacity: 0.5; /* Safari, Opera */ -moz-opacity:0.50; /* FireFox */}
 			#imagecontainer				{z-index:2;}
-			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto;}
-			#triggercontainer			{width:100%;}
+			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto; z-index:2}
+			#triggercontainer			{width:100%;z-index:3}
 			#imagecontained 			{margin-left: auto; margin-right: auto;}
-			.triggerarea				{background-image:url(./transparent.gif); background-repeat: no-repeat; width:37%; position:absolute; height: 100%;z-index:3;}
+			.triggerarea				{background-image:url(./transparent.gif); background-repeat: no-repeat; width:18%; position:absolute; height: 100%;z-index:3;}
+			#nextbutton 				{margin-right: -4ex; top: 43%; position: absolute; right: 0; z-index:1; opacity:0;}
+			#prevbutton 				{margin-left: -4ex; top: 43%; position: absolute; z-index:1; opacity:0;}
+			#magnifybutton 				{float: left; left: 50%;  top: 43%; position:absolute; margin-left: -33px; z-index:1; opacity:0;}
+			#magnifytrigger				{height: 24%; left: 41%; position: absolute; top: 40%; width: 19%;}
 			#captioncontainer			{margin-left:auto; margin-right:auto; position:relative;}
 			.caption					{background-color: #eae1cb;;border-style: solid;border:none;padding: 0.3ex; width:90%; font-family: helvetica;
 										 height: 1.7em;margin-top: 1ex; margin-left:5%;}
@@ -114,6 +118,9 @@
 		var CURRENT_IMG_LOCATION = {x:-1,y:-1};
 		var CURRENT_IMG_THUMB_SIZE = {width:-1,y:-1};
 		
+		// currently displaying image at full resolution, without width contraints
+		var FULLRESIMAGE = false;
+		
 		
 		
 		//================ jquery history ===========================
@@ -136,8 +143,8 @@
 							
 							//remove_images();
 							remove_zoomed_image();
-							greyout(true,petalname)
-							log("test!");
+							greyout(true,petalname);
+							setshowfullress(false); //only show fullres after explicitly clicking zoom
 							showimage(petalname,imagename);		
 							//TODO remove ring?
 							contract_ring(svg,ANIMATE);
@@ -153,7 +160,7 @@
 						
 						//If this matches you need to show a bunch of images
 						else if(state.match("^petal/") != null){
-							log("url regex: I need to show a bunc of images","debug");
+							log("url regex: I need to show a bunch of images","debug");
 							var petalname = state.substring(6);
 							
 							greyout(false);
@@ -399,7 +406,7 @@
 					var triggercontainer = inner
 											.append("div")
 											.attr("id","triggercontainer")
-											
+					
 					
 					function imageurl(petalname,dataset,idx){
 						//loop around
@@ -411,23 +418,85 @@
 						return nextimageurl;
 					}
 					
+					var nextimage = function(){
+						var nextimageurl = imageurl(petalname,dataset,index+1);
+						$.History.go(nextimageurl);
+					}
+					
+					var previmage = function(){
+						var nextimageurl = imageurl(petalname,dataset,index-1);
+						$.History.go(nextimageurl);
+					}
+					
+					
+					
+					
 					//prev image triger
 					triggercontainer.append("div")
 						.attr("class","triggerarea")						
 						//.style("float","left")
-						.on("click",function(){
-								var nextimageurl = imageurl(petalname,dataset,index-1);
-								$.History.go(nextimageurl);
+						.on("click",previmage)
+						.on("mouseover",function(){						
+								d3.select("#prevbutton").transition().style("opacity",1)							
 							})
+						.on("mouseout",function(){						
+								d3.select("#prevbutton").transition().style("opacity",0)							
+							})
+						
+					triggercontainer.append("img")
+						.attr("id","nextbutton")						
+						.attr("src", "nextbutton.png")
+						.on("click",nextimage)
+						.on("mouseover",function(){						
+							d3.select("#nextbutton").transition().style("opacity",1)							
+						 })
+						.on("mouseout",function(){						
+							d3.select("#nextbutton").transition().style("opacity",0)							
+						 })	
+						
+												
+					triggercontainer.append("img")
+						.attr("id","prevbutton")						
+						.attr("src", "prevbutton.png")
+						.on("click",previmage)
+						.on("mouseover",function(){						
+								d3.select("#prevbutton").transition().style("opacity",1)							
+							})
+						.on("mouseout",function(){						
+								d3.select("#prevbutton").transition().style("opacity",0)							
+							})
+
+					triggercontainer.append("div")
+						.attr("class","triggerarea")
+						.attr("id","magnifytrigger")
+						.on("click",function(){
+								setshowfullress(true);
+
+								
+						})		
+						.on("mouseover",function(){						
+							d3.select("#magnifybutton").transition().style("opacity",1)							
+						})
+						.on("mouseout",function(){						
+							d3.select("#magnifybutton").transition().style("opacity",0)							
+						})
+						
+					triggercontainer.append("img")
+						.attr("id","magnifybutton")						
+						.attr("src","magnifybutton.png")
+					
 					
 					//go next image trigger		
 					triggercontainer.append("div")
 							.attr("class","triggerarea")
 							.style("right","0%")
-							.on("click",function(){
-									var nextimageurl = imageurl(petalname,dataset,index+1);
-									$.History.go(nextimageurl);
-								})
+							.on("click",nextimage)
+							.on("mouseover",function(){						
+								d3.select("#nextbutton").transition().style("opacity",1)							
+							 })
+							.on("mouseout",function(){						
+								d3.select("#nextbutton").transition().style("opacity",0)							
+							 })	
 					
 					inner
 						.append("div")
@@ -475,11 +544,7 @@
 
 				};
 				
-				function onscreenresize(){
-					// Set these as jquery because css cannot do this.
-					$("#innerimagecontainer").height($(window).height()*0.8+"px");
-					$("#innerimagecontainer").width($("#imagecontained").width())
-				}
+				
 				// shrinkwrapping a div around an image is one of these weird webdev things: sounds simple
 				// but is actually IMPOSSIBLE. Resorting to javascript				
 				d3.select(window).on("resize",function(){
@@ -495,6 +560,51 @@
 			
 		}
 		
+		function onscreenresize(){
+							// Set these as jquery because css cannot do this.
+							if(FULLRESIMAGE){
+							}else{
+								$("#innerimagecontainer").height($(window).height()*0.8+"px");
+								$("#innerimagecontainer").width($("#imagecontained").width())
+								
+							}
+							
+				}
+		
+		
+		function setshowfullress(value){
+			//when showing single image, do not constrain size. Show at full resolution.
+			log("setting show zoomed image in full resolution to "+value,"debug")
+
+			function showfullres(){
+					FULLRESIMAGE = true;
+					d3.select("#innerimagecontainer").transition().style("width","100%").style("height","100%")					
+					d3.select("#triggercontainer").style("display","none");
+					d3.select("#imagecontained")					
+					.on("click",function(){stopfullres();})		
+					//scroll screen to middle of full res image. delay this because otherwise contrained width/height will be taken.
+					setTimeout(function(){$(window).scrollTop(($("#imagecontained").height()-$(window).height())*0.5);},100);
+					setTimeout(function(){$(window).scrollLeft(($("#imagecontained").width()-$(window).width())*0.5);},100);
+
+					
+			}
+			function stopfullres(){
+					FULLRESIMAGE = false;
+					d3.select("#triggercontainer").style("display","inline");
+					d3.select("#imagecontained")
+					.on("click",function(){})
+					onscreenresize()
+
+			}
+
+			if(value == true){
+				showfullres();
+			}else{
+
+				stopfullres();
+			}
+
+		}
 		
 		
 		function showimages(petalname,startpos,ANIMATE){
