@@ -42,7 +42,7 @@
     	
     	<!--[if lt IE 8]>
 				    <script>
-				    	alert("sorry");
+				    	alert("I think you're running Internet Explorer 7 or less. This website can not be viewed in very old browsers. Please download Firefox or Chrome or upgrade Internet Explorer.");
 				    </script>
     	<![endif]-->
     	
@@ -55,7 +55,7 @@
 		<style type="text/css">
 			body 						{background-color: #252525; overflow: -moz-scrollbars-vertical;overflow: scroll;}
 			.bar 						{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
-			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute;} 
+			.preview 					{background-repeat: no-repeat; background-size: 100% auto; position: absolute; z-index: -1;} 
 			.loading					{background-image:url(./ajax-loader.gif); background-repeat: no-repeat;}
 			#loadingsign	   			{height: 34px; margin-left: auto; margin-right: auto; margin-top: 200px; width:34px;}
 			#viz						{width:800px; margin-left: auto; margin-right: auto; position:relative;}
