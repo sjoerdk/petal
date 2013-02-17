@@ -580,11 +580,14 @@
 					FULLRESIMAGE = true;
 					d3.select("#innerimagecontainer").transition().style("width","100%").style("height","100%")					
 					d3.select("#triggercontainer").style("display","none");
-					d3.select("#imagecontained")					
-					.on("click",function(){stopfullres();})		
+					d3.select("#imagecontained")
+						.style("height","") //needed for chrome to not scale image to screen.
+						.on("click",function(){
+							stopfullres();
+							})		
 					//scroll screen to middle of full res image. delay this because otherwise contrained width/height will be taken.
-					setTimeout(function(){$(window).scrollTop(($("#imagecontained").height()-$(window).height())*0.5);},100);
-					setTimeout(function(){$(window).scrollLeft(($("#imagecontained").width()-$(window).width())*0.5);},100);
+						setTimeout(function(){$(window).scrollTop(($("#imagecontained").height()-$(window).height())*0.5);},100);
+						setTimeout(function(){$(window).scrollLeft(($("#imagecontained").width()-$(window).width())*0.5);},100);
 
 					
 			}
@@ -592,7 +595,8 @@
 					FULLRESIMAGE = false;
 					d3.select("#triggercontainer").style("display","inline");
 					d3.select("#imagecontained")
-					.on("click",function(){})
+						.style("height","100%") 
+						.on("click",function(){})//remove callback
 					onscreenresize()
 
 			}
