@@ -19,9 +19,11 @@
 	 							Added 
 	 * 13/02/2013 v1.4			Removed even listening on petals when in transition. This cancels any weird
 	 							bouncing when contracting or expanding menu
+	 * 16/02/2013 v1.5			Completely fixed everything you would ever want. See git logs for all changes
+	 * 17/02/2013 v1.6			Removed aight lib because as it turns out IE8 does not support any svg stuff,
+	 							no matter the number of libraries you throw at it. Now showing message instead
 							
-	 *  TODO: - make work on IE8. IE7 can go take a hike, maybe add warning for old browsers
-	 		  - patalnames should be unique, otherwise things go wrong with looking up values. check this.
+	 *  TODO:  - patalnames should be unique, otherwise things go wrong with looking up values. check this.
 	 		  - encode urls to not include spaces, or fix url patterns to deal with spaces	 	 	
 	 		  
 	 	
@@ -35,15 +37,11 @@
 	<head>
 		<meta charset="utf-8">
 		<title>Petals</title>
-		<meta http-equiv="X-UA-Compatible" content="IE=Edge">
-	    <!--[if lt IE 9]>
-		    <script type="text/javascript" src="aight.d3.min.js.htm"></script>
-    	<![endif]-->
-    	
-    	<!--[if lt IE 8]>
-				    <script>
-				    	alert("I think you're running Internet Explorer 7 or less. This website can not be viewed in very old browsers. Please download Firefox or Chrome or upgrade Internet Explorer.");
-				    </script>
+			
+    	<!--[if lt IE 9]>
+			<script>
+				alert("I think you're running Internet Explorer 8 or older. This website needs a modern browser. Please download Firefox or Chrome or upgrade to Internet Explorer 9.");
+			</script>
     	<![endif]-->
     	
 				
