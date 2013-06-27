@@ -22,6 +22,7 @@
 	 * 16/02/2013 v1.5			Completely fixed everything you would ever want. See git logs for all changes
 	 * 17/02/2013 v1.6			Removed aight lib because as it turns out IE8 does not support any svg stuff,
 	 							no matter the number of libraries you throw at it. Now showing message instead
+	 * 27/06/2013 v1.7			Improved triggerareas for navigation, making going to next image easier.
 							
 	 *  TODO:  - patalnames should be unique, otherwise things go wrong with looking up values. check this.
 	 		  - encode urls to not include spaces, or fix url patterns to deal with spaces	 	 	
@@ -66,7 +67,10 @@
 			#innerimagecontainer		{position:relative;margin-left: auto; margin-right: auto; z-index:2}
 			#triggercontainer			{width:100%;z-index:3}
 			#imagecontained 			{margin-left: auto; margin-right: auto;}
-			.triggerarea				{background-image:url(./transparent.gif); background-repeat: no-repeat; width:18%; position:absolute; height: 100%;z-index:3;}
+			.triggerarea				{background-image:url(./transparent.gif); background-repeat: no-repeat;
+										 width:60%; position:absolute; height: 100%;z-index:3;}
+			.triggerarea.right			{right:-30%;}
+			.triggerarea.left			{left:-30%;}
 			#nextbutton 				{margin-right: -4ex; top: 43%; position: absolute; right: 0; z-index:1; opacity:0;}
 			#prevbutton 				{margin-left: -4ex; top: 43%; position: absolute; z-index:1; opacity:0;}
 			#magnifybutton 				{float: left; left: 50%;  top: 43%; position:absolute; margin-left: -33px; z-index:1; opacity:0;}
@@ -439,7 +443,7 @@
 					
 					//prev image triger
 					triggercontainer.append("div")
-						.attr("class","triggerarea")						
+						.attr("class","triggerarea left")						
 						//.style("float","left")
 						.on("click",previmage)
 						.on("mouseover",function(){						
@@ -494,8 +498,7 @@
 					
 					//go next image trigger		
 					triggercontainer.append("div")
-							.attr("class","triggerarea")
-							.style("right","0%")
+							.attr("class","triggerarea right")
 							.on("click",nextimage)
 							.on("mouseover",function(){						
 								d3.select("#nextbutton").transition().style("opacity",1)							
@@ -646,7 +649,7 @@
 				var startposx = function(d){if(ANIMATE){return startpos.x+"px";}else{return x(d);}}
 				var startposy = function(d){if(ANIMATE){return startpos.y+"px";}else{return y(d);}}
 				
-					var divs = d3.select("body #viz");
+				var divs = d3.select("body #viz");
 				var images = divs.selectAll("div")
 							.data(dataset)
 							.enter()
