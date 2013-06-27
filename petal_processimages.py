@@ -1,4 +1,6 @@
-# process all images in current directory so they can be shown in my awesome d3 picture showing framework
+#==========#==========#==========#==========#==========#==========#==========#=========
+# process all images in current directory so they can be shown in my awesome d3 picture
+# showing framework
 
 import glob
 import Image
@@ -119,7 +121,8 @@ def process(dir):
 	# hobby project method: sample randomly on coarse grid
 
 	# approximate number of gridpoints in height and width
-	n = int(math.ceil(math.sqrt(len(files))))  #assume square space, if nog square grid will be squashed
+	n = int(math.ceil(math.sqrt(len(files))))  # assume square space, if not
+											   # square grid will be squashed
 	n = n*2 # make sure there is room for randomness
 
 	# create course gridpoints
